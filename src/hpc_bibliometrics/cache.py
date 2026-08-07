@@ -7,6 +7,10 @@ from pathlib import Path
 from typing import Any, Iterable, Mapping
 
 
+# Version 2 adds XPAC-inclusive source collection. Caches produced by version 1
+# can contain false zero-result years and must therefore be rebuilt once.
+CACHE_FORMAT_VERSION = 2
+
 PAPER_COLUMNS = (
     "openalex_id",
     "doi",
@@ -120,7 +124,7 @@ def update_manifest(
             "source": dict(source),
             "years": dict(sorted(merged_years.items(), key=lambda item: int(item[0]))),
             "updated_at": datetime.now(timezone.utc).isoformat(),
-            "format_version": 1,
+            "format_version": CACHE_FORMAT_VERSION,
         }
     )
     write_json_atomic(path, current)
