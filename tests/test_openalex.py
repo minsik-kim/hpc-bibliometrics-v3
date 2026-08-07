@@ -47,6 +47,32 @@ def test_resolve_source_and_paginate_works() -> None:
     assert "per_page=100" in calls[1]
 
 
+def test_check_auth_uses_minimal_works_request() -> None:
+    calls: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        return httpx.Response(
+            200,
+            json={"results": [{"id": "https://openalex.org/W1"}], "meta": {}},
+        )
+
+    client = OpenAlexClient(
+        api_key="test-key",
+        transport=httpx.MockTransport(handler),
+        max_retries=1,
+    )
+    try:
+        client.check_auth()
+    finally:
+        client.close()
+
+    assert len(calls) == 1
+    assert calls[0].url.path == "/works"
+    assert calls[0].url.params.get("select") == "id"
+    assert calls[0].url.params.get("per_page") == "1"
+
+
 def test_work_to_row_flattens_nested_metadata() -> None:
     row = work_to_row(
         {
@@ -80,6 +106,44 @@ def test_live_client_requires_api_key(monkeypatch) -> None:
 
     with pytest.raises(OpenAlexError, match="OPENALEX_API_KEY is required"):
         OpenAlexClient()
+
+
+def test_api_key_is_trimmed_and_unquoted() -> None:
+    client = OpenAlexClient(
+        api_key='  "copied-key"  ',
+        transport=httpx.MockTransport(
+            lambda request: httpx.Response(200, json={"results": [], "meta": {}})
+        ),
+        max_retries=1,
+    )
+    try:
+        assert client.api_key == "copied-key"
+    finally:
+        client.close()
+
+
+def test_unauthorized_error_is_actionable_and_hides_key() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(401, json={"error": "unauthorized"})
+
+    import pytest
+    from hpc_bibliometrics.openalex import OpenAlexError
+
+    client = OpenAlexClient(
+        api_key="super-secret-key",
+        transport=httpx.MockTransport(handler),
+        max_retries=1,
+    )
+    try:
+        with pytest.raises(OpenAlexError) as captured:
+            client.check_auth()
+    finally:
+        client.close()
+
+    message = str(captured.value)
+    assert "HTTP 401" in message
+    assert "hpc-bib check-auth" in message
+    assert "super-secret-key" not in message
 
 
 def test_http_error_does_not_expose_api_key() -> None:
