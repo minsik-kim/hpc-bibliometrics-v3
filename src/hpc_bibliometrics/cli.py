@@ -6,12 +6,27 @@ import typer
 
 from .collector import YearResult, collect_venue
 from .config import VENUES, get_venue
+from .openalex import OpenAlexClient
 
 app = typer.Typer(
     no_args_is_help=True,
     add_completion=False,
     help="Fast, cached bibliometric collection for HPC conferences.",
 )
+
+
+@app.command("check-auth")
+def check_auth() -> None:
+    """Validate OPENALEX_API_KEY before starting a collection."""
+
+    try:
+        with OpenAlexClient() as client:
+            client.check_auth()
+    except RuntimeError as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(code=1) from None
+
+    typer.echo("OpenAlex authentication: OK")
 
 
 @app.command()
