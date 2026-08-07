@@ -20,7 +20,7 @@ HTML = '''
 
 def test_dblp_parses_main_paper() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
-        assert request.url.path.endswith("/db/conf/ipps/ipdps2024.bht")
+        assert request.url.path.endswith("/db/conf/ipps/ipdps2024.html")
         return httpx.Response(200, text=HTML)
 
     with DblpClient(transport=httpx.MockTransport(handler)) as client:
