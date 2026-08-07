@@ -36,6 +36,15 @@ class OpenAlexError(RuntimeError):
     """Raised when OpenAlex cannot satisfy a request."""
 
 
+def _clean_api_key(value: str | None) -> str:
+    """Normalize a copied key without ever logging its contents."""
+
+    key = (value or "").strip()
+    if len(key) >= 2 and key[0] == key[-1] and key[0] in {"'", '"'}:
+        key = key[1:-1].strip()
+    return key
+
+
 class OpenAlexClient:
     def __init__(
         self,
@@ -45,7 +54,8 @@ class OpenAlexClient:
         max_retries: int = 5,
         transport: httpx.BaseTransport | None = None,
     ) -> None:
-        resolved_key = api_key or os.getenv("OPENALEX_API_KEY")
+        raw_key = api_key if api_key is not None else os.getenv("OPENALEX_API_KEY")
+        resolved_key = _clean_api_key(raw_key)
         if not resolved_key and transport is None:
             raise OpenAlexError(
                 "OPENALEX_API_KEY is required. Create a free key at "
@@ -90,7 +100,6 @@ class OpenAlexClient:
         query = dict(params or {})
         query["api_key"] = self.api_key
 
-        last_error: Exception | None = None
         for attempt in range(self.max_retries):
             try:
                 response = self._client.get(path, params=query)
@@ -103,6 +112,20 @@ class OpenAlexClient:
                     time.sleep(delay)
                     continue
 
+                if response.status_code == 401:
+                    raise OpenAlexError(
+                        "OpenAlex rejected OPENALEX_API_KEY (HTTP 401). "
+                        "Use a current OpenAlex key from "
+                        "https://openalex.org/settings/api; an IEEE key will not work. "
+                        "Re-export the key, then run `hpc-bib check-auth`."
+                    )
+
+                if response.status_code == 403:
+                    raise OpenAlexError(
+                        "OpenAlex denied the request (HTTP 403). Check the account's "
+                        "API access and usage dashboard."
+                    )
+
                 if response.is_error:
                     raise OpenAlexError(
                         f"OpenAlex returned HTTP {response.status_code} for {path}"
@@ -114,14 +137,18 @@ class OpenAlexClient:
                 return payload
             except OpenAlexError:
                 raise
-            except (httpx.HTTPError, ValueError) as exc:
-                last_error = exc
+            except (httpx.HTTPError, ValueError):
                 if attempt + 1 < self.max_retries:
                     time.sleep(min(30.0, (2**attempt) + random.random()))
 
         # Suppress the underlying httpx exception because it retains the full
         # request URL, including the API key query parameter.
         raise OpenAlexError(f"OpenAlex request failed for {path}") from None
+
+    def check_auth(self) -> dict[str, Any]:
+        """Validate the configured API key without exposing it."""
+
+        return self._request("/rate-limit")
 
     def resolve_source(self, venue: VenueSpec) -> dict[str, Any]:
         payload = self._request(f"/sources/{quote(venue.source_lookup, safe=':')}")
