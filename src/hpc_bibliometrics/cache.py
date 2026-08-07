@@ -7,23 +7,17 @@ from pathlib import Path
 from typing import Any, Iterable, Mapping
 
 
-# Version 2 adds XPAC-inclusive source collection. Caches produced by version 1
-# can contain false zero-result years and must therefore be rebuilt once.
-CACHE_FORMAT_VERSION = 2
+# Version 3 changes the authoritative conference roster from OpenAlex Source-ID
+# queries to DBLP proceedings. Older zero-result caches must be rebuilt.
+CACHE_FORMAT_VERSION = 3
 
 PAPER_COLUMNS = (
-    "openalex_id",
+    "dblp_key",
     "doi",
     "title",
     "publication_year",
-    "publication_date",
-    "work_type",
-    "cited_by_count",
-    "source_id",
-    "source_name",
-    "authorships_json",
-    "topics_json",
-    "keywords_json",
+    "authors_json",
+    "dblp_url",
 )
 
 
@@ -33,10 +27,6 @@ def venue_cache_dir(cache_root: Path, venue_key: str) -> Path:
 
 def year_cache_path(cache_root: Path, venue_key: str, year: int) -> Path:
     return venue_cache_dir(cache_root, venue_key) / f"{year}.parquet"
-
-
-def source_cache_path(cache_root: Path) -> Path:
-    return cache_root / "sources.json"
 
 
 def manifest_path(cache_root: Path, venue_key: str) -> Path:
@@ -60,36 +50,15 @@ def write_json_atomic(path: Path, payload: Any) -> None:
 
 
 def write_parquet_atomic(rows: Iterable[Mapping[str, Any]], path: Path) -> int:
-    """Write one year's works atomically and return the row count.
-
-    Polars is imported lazily so configuration and API tests can run without
-    loading the native dataframe extension.
-    """
-
     import polars as pl
 
     materialized = list(rows)
     normalized = [{column: row.get(column) for column in PAPER_COLUMNS} for row in materialized]
-
     if normalized:
         frame = pl.DataFrame(normalized, strict=False).select(list(PAPER_COLUMNS))
     else:
-        frame = pl.DataFrame(
-            {
-                "openalex_id": pl.Series([], dtype=pl.String),
-                "doi": pl.Series([], dtype=pl.String),
-                "title": pl.Series([], dtype=pl.String),
-                "publication_year": pl.Series([], dtype=pl.Int64),
-                "publication_date": pl.Series([], dtype=pl.String),
-                "work_type": pl.Series([], dtype=pl.String),
-                "cited_by_count": pl.Series([], dtype=pl.Int64),
-                "source_id": pl.Series([], dtype=pl.String),
-                "source_name": pl.Series([], dtype=pl.String),
-                "authorships_json": pl.Series([], dtype=pl.String),
-                "topics_json": pl.Series([], dtype=pl.String),
-                "keywords_json": pl.Series([], dtype=pl.String),
-            }
-        )
+        frame = pl.DataFrame({column: pl.Series([], dtype=pl.String) for column in PAPER_COLUMNS})
+        frame = frame.with_columns(pl.col("publication_year").cast(pl.Int64))
 
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f".{path.name}.tmp")
@@ -99,8 +68,6 @@ def write_parquet_atomic(rows: Iterable[Mapping[str, Any]], path: Path) -> int:
 
 
 def parquet_row_count(path: Path) -> int:
-    """Return a cached Parquet file's row count."""
-
     import polars as pl
 
     return int(pl.scan_parquet(path).select(pl.len()).collect().item())
