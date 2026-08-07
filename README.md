@@ -27,13 +27,13 @@ python -m pip install -e ".[dev]"
 
 Apple Silicon Homebrew commonly installs Python under `/opt/homebrew/bin/python3.12`; use that path when applicable.
 
-OpenAlex can use an email and, where required, an API key:
+OpenAlex requires a free API key:
 
 ```bash
-export OPENALEX_EMAIL="you@example.com"
-# Optional, depending on the current OpenAlex access policy:
-export OPENALEX_API_KEY="..."
+export OPENALEX_API_KEY="your-key"
 ```
+
+The key is passed only to OpenAlex and is not written to the cache. The collector also suppresses request URLs in its own errors so normal tracebacks do not expose the key.
 
 ## Collect IPDPS 2016-2025
 
