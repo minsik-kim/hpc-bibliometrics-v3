@@ -161,6 +161,11 @@ class OpenAlexClient:
                         f"from_publication_date:{year}-01-01,"
                         f"to_publication_date:{year}-12-31"
                     ),
+                    # The current OpenAlex Walden index excludes XPAC records by
+                    # default. Conference proceedings such as IPDPS can be XPAC-
+                    # only, so source queries must opt in explicitly. OpenAlex's
+                    # own GUI does the same when linking a Source to its Works.
+                    "include_xpac": "true",
                     "select": DEFAULT_SELECT,
                     "cursor": cursor,
                     "per_page": per_page,
