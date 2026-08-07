@@ -17,7 +17,7 @@ app = typer.Typer(
 
 @app.command("check-auth")
 def check_auth() -> None:
-    """Validate OPENALEX_API_KEY before starting a collection."""
+    """Validate OPENALEX_API_KEY for the later affiliation-enrichment stage."""
 
     try:
         with OpenAlexClient() as client:
@@ -25,7 +25,6 @@ def check_auth() -> None:
     except RuntimeError as exc:
         typer.echo(f"Error: {exc}", err=True)
         raise typer.Exit(code=1) from None
-
     typer.echo("OpenAlex authentication: OK")
 
 
@@ -38,18 +37,15 @@ def collect(
     workers: int = typer.Option(4, "--workers", "-j", min=1, max=10),
     refresh: bool = typer.Option(False, "--refresh", help="Replace existing yearly caches."),
 ) -> None:
-    """Collect a venue's OpenAlex records into yearly Parquet files."""
+    """Collect the exact DBLP conference roster into yearly Parquet files."""
 
     try:
         spec = get_venue(venue)
-        typer.echo(
-            f"Collecting {spec.key.upper()} {from_year}-{to_year} "
-            f"with {workers} worker(s)..."
-        )
+        typer.echo(f"Collecting {spec.key.upper()} {from_year}-{to_year} from DBLP with {workers} worker(s)...")
 
         def report_year(item: YearResult) -> None:
             state = "cached" if item.cached else "downloaded"
-            typer.echo(f"{item.year}: {item.count:4d} works [{state}]")
+            typer.echo(f"{item.year}: {item.count:4d} papers [{state}]")
 
         result = collect_venue(
             spec,
@@ -64,8 +60,8 @@ def collect(
         typer.echo(f"Error: {exc}", err=True)
         raise typer.Exit(code=1) from None
 
-    typer.echo(f"Source: {result.source['display_name']} ({result.source['id']})")
-    typer.echo(f"Total: {result.total_count} works")
+    typer.echo(f"Roster: {result.source['provider']} - {result.source['display_name']}")
+    typer.echo(f"Total: {result.total_count} papers")
     typer.echo(f"Manifest: {result.manifest}")
 
 
