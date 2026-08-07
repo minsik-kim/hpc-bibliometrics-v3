@@ -5,22 +5,20 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True, slots=True)
 class VenueSpec:
-    """Stable metadata used to resolve an OpenAlex source."""
+    """Stable metadata used to collect an exact conference roster."""
 
     key: str
     display_name: str
-    source_lookup: str
-    expected_name_tokens: tuple[str, ...]
+    dblp_toc_pattern: str
 
 
 VENUES: dict[str, VenueSpec] = {
     "ipdps": VenueSpec(
         key="ipdps",
         display_name="IEEE International Parallel and Distributed Processing Symposium",
-        # The main IPDPS proceedings use this ISSN. IPDPS Workshops use a
-        # different proceedings record and are therefore not selected here.
-        source_lookup="issn:1530-2075",
-        expected_name_tokens=("parallel", "distributed", "processing"),
+        # DBLP's main IPDPS table of contents uses ipdpsYYYY. Workshop
+        # proceedings use a different key and are intentionally excluded.
+        dblp_toc_pattern="db/conf/ipps/ipdps{year}.bht",
     ),
 }
 
