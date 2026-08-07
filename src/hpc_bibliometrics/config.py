@@ -16,10 +16,9 @@ VENUES: dict[str, VenueSpec] = {
     "ipdps": VenueSpec(
         key="ipdps",
         display_name="IEEE International Parallel and Distributed Processing Symposium",
-        # DBLP exposes the main-conference table of contents as an HTML page.
-        # The displayed BHT key is an internal DBLP key, not a fetchable URL.
-        # Workshop proceedings use a distinct key and are intentionally excluded.
-        dblp_toc_pattern="db/conf/ipps/ipdps{year}.html",
+        # DBLP's export API accepts the BHT table-of-contents key directly.
+        # Workshop proceedings use different keys and are intentionally excluded.
+        dblp_toc_pattern="db/conf/ipps/ipdps{year}.bht",
     ),
 }
 
