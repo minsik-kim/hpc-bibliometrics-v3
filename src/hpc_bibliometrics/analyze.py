@@ -8,8 +8,8 @@ from typing import Any
 import polars as pl
 
 # Conservative curated registry: public/national research institutes and national
-# supercomputing centers only. Parent academies (for example CAS) are not classified
-# wholesale. OpenAlex IDs/RORs take precedence over name aliases when available.
+# supercomputing centers only. Parent academies (for example CAS/CNRS) are not
+# classified wholesale. OpenAlex IDs/RORs take precedence over name aliases.
 RESEARCH_LABS: dict[str, dict[str, Any]] = {
     "ANL": {"country": "US", "aliases": ("argonne national laboratory",)},
     "BNL": {"country": "US", "aliases": ("brookhaven national laboratory",)},
@@ -62,6 +62,50 @@ RESEARCH_LABS: dict[str, dict[str, Any]] = {
         "aliases": ("national institute of information and communications technology",)},
     "JAEA": {"country": "JP", "aliases": ("japan atomic energy agency",)},
     "JAMSTEC": {"country": "JP", "aliases": ("japan agency for marine-earth science and technology", "japan agency for marine earth science and technology")},
+
+    # Korea
+    "KISTI": {"country": "KR", "openalex_ids": ("I878022262",), "rors": ("01k4yrm29",),
+        "aliases": ("korea institute of science and technology information",)},
+    "ETRI": {"country": "KR", "openalex_ids": ("I142401562",), "rors": ("03ysstz10",),
+        "aliases": ("electronics and telecommunications research institute",)},
+
+    # Germany
+    "ZIB": {"country": "DE", "openalex_ids": ("I195893171",), "rors": ("02eva5865",),
+        "aliases": ("zuse institute berlin",)},
+    "MPCDF": {"country": "DE", "openalex_ids": ("I4210132734",), "rors": ("03e21z229",),
+        "aliases": ("max planck computing and data facility",)},
+    "LRZ": {"country": "DE", "openalex_ids": ("I4210163716",), "rors": ("05558nw16",),
+        "aliases": ("leibniz supercomputing centre", "leibniz supercomputing center")},
+    "HZDR": {"country": "DE", "openalex_ids": ("I2801798921",), "rors": ("01zy2cs03",),
+        "aliases": ("helmholtz-zentrum dresden-rossendorf", "helmholtz zentrum dresden rossendorf")},
+    "CASUS": {"country": "DE", "openalex_ids": ("I4210133756",), "rors": ("042b69396",),
+        "aliases": ("center for advanced systems understanding",)},
+
+    # France: national research organizations/centers. CNRS as a whole is excluded.
+    "INRIA": {"country": "FR", "openalex_ids": ("I1326498283",), "rors": ("02kvxyf05",),
+        "aliases": ("institut national de recherche en sciences et technologies du numérique", "inria")},
+    "INRIA-BORDEAUX": {"country": "FR", "openalex_ids": ("I4210131512",), "rors": ("03tjcj052",),
+        "aliases": ("centre inria de l'université de bordeaux", "centre inria de l'universite de bordeaux")},
+    "INRIA-RENNES": {"country": "FR", "openalex_ids": ("I4210133778",), "rors": ("04040yw90",),
+        "aliases": ("centre inria de l'université de rennes", "centre inria de l'universite de rennes")},
+    "INRIA-GRENOBLE": {"country": "FR", "openalex_ids": ("I4210101348",), "rors": ("00n8d6z93",),
+        "aliases": ("centre inria de l'université grenoble alpes", "centre inria de l'universite grenoble alpes")},
+    "CEA": {"country": "FR", "openalex_ids": ("I2738703131",), "rors": ("00jjx8s55",),
+        "aliases": ("commissariat à l'énergie atomique et aux énergies alternatives", "commissariat a l'energie atomique et aux energies alternatives")},
+    "CEA-GRENOBLE": {"country": "FR", "openalex_ids": ("I3020098449",), "rors": ("02mg6n827",),
+        "aliases": ("cea grenoble",)},
+    "CEA-CESTA": {"country": "FR", "openalex_ids": ("I129235615",), "rors": ("026ma2c10",),
+        "aliases": ("cea cesta",)},
+    "CEA-SACLAY": {"country": "FR", "openalex_ids": ("I4210128565",), "rors": ("03n15ch10",),
+        "aliases": ("cea paris-saclay", "cea paris saclay")},
+    "MAISON-SIM": {"country": "FR", "openalex_ids": ("I4210125654",), "rors": ("03jv6w209",),
+        "aliases": ("maison de la simulation",)},
+
+    # United Kingdom
+    "RAL": {"country": "GB", "openalex_ids": ("I1286704778",), "rors": ("03gq8fr08",),
+        "aliases": ("rutherford appleton laboratory",)},
+    "ECMWF": {"country": "GB", "openalex_ids": ("I154986956",), "rors": ("014w0fd65",),
+        "aliases": ("european centre for medium-range weather forecasts", "european centre for medium range weather forecasts")},
 }
 
 UNIVERSITY_TYPES = {"education"}
