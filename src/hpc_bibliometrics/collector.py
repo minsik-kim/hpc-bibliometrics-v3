@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from .cache import (
+    CACHE_FORMAT_VERSION,
     load_json,
     parquet_row_count,
     source_cache_path,
@@ -72,6 +73,15 @@ def _collect_year(
     return YearResult(year=year, path=path, count=count, cached=False)
 
 
+def _manifest_format_version(manifest: Any) -> int:
+    if not isinstance(manifest, dict):
+        return 0
+    try:
+        return int(manifest.get("format_version") or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
 def collect_venue(
     venue: VenueSpec,
     *,
@@ -94,7 +104,13 @@ def collect_venue(
         source = _resolve_source(api, venue, cache_root)
         source_id = str(source["id"])
         old_manifest = load_json(cache_root / venue.key / "manifest.json", {})
-        old_counts = old_manifest.get("years", {}) if isinstance(old_manifest, dict) else {}
+        cache_compatible = _manifest_format_version(old_manifest) >= CACHE_FORMAT_VERSION
+        effective_refresh = refresh or not cache_compatible
+        old_counts = (
+            old_manifest.get("years", {})
+            if cache_compatible and isinstance(old_manifest, dict)
+            else {}
+        )
 
         futures = {}
         results: list[YearResult] = []
@@ -107,7 +123,7 @@ def collect_venue(
                     source_id,
                     year,
                     cache_root,
-                    refresh,
+                    effective_refresh,
                 )
                 futures[future] = year
 
