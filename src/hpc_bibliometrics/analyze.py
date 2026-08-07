@@ -7,11 +7,10 @@ from typing import Any
 
 import polars as pl
 
-# Conservative curated registry: only organizations that are clearly public/national
-# research institutes or national supercomputing centers. Do not classify parent
-# academies wholesale (for example, CAS); match institute/center-level affiliations.
+# Conservative curated registry: public/national research institutes and national
+# supercomputing centers only. Parent academies (for example CAS) are not classified
+# wholesale. OpenAlex IDs/RORs take precedence over name aliases when available.
 RESEARCH_LABS: dict[str, dict[str, Any]] = {
-    # United States - DOE national laboratories
     "ANL": {"country": "US", "aliases": ("argonne national laboratory",)},
     "BNL": {"country": "US", "aliases": ("brookhaven national laboratory",)},
     "FNAL": {"country": "US", "aliases": ("fermi national accelerator laboratory", "fermilab")},
@@ -27,18 +26,40 @@ RESEARCH_LABS: dict[str, dict[str, Any]] = {
     "SNL": {"country": "US", "aliases": ("sandia national laboratories", "sandia national laboratory")},
     "SLAC": {"country": "US", "aliases": ("slac national accelerator laboratory",)},
     "SRNL": {"country": "US", "aliases": ("savannah river national laboratory",)},
-    # China - institute/center level, intentionally not all of CAS
-    "CAS-ICT": {"country": "CN", "aliases": ("institute of computing technology, chinese academy of sciences", "institute of computing technology chinese academy of sciences")},
-    "CAS-SIAT": {"country": "CN", "aliases": ("shenzhen institutes of advanced technology, chinese academy of sciences", "shenzhen institute of advanced technology, chinese academy of sciences")},
-    "CAS-ISCAS": {"country": "CN", "aliases": ("institute of software, chinese academy of sciences",)},
+
+    # China: institute/center-level entries only. CAS itself is intentionally excluded.
+    "CAS-ICT": {"country": "CN", "openalex_ids": ("I4210090176",), "rors": ("0090r4d87",),
+        "aliases": ("institute of computing technology", "institute of computing technology, chinese academy of sciences")},
+    "CAS-SIAT": {"country": "CN", "openalex_ids": ("I4210145761",), "rors": ("04gh4er46",),
+        "aliases": ("shenzhen institutes of advanced technology", "shenzhen institute of advanced technology")},
+    "CAS-ISCAS": {"country": "CN", "openalex_ids": ("I4210128818",), "rors": ("033dfsn42",),
+        "aliases": ("institute of software, chinese academy of sciences", "institute of software")},
+    "CAS-IIE": {"country": "CN", "openalex_ids": ("I4210156404",), "rors": ("04r53se39",),
+        "aliases": ("institute of information engineering",)},
+    "CAS-CNIC": {"country": "CN", "openalex_ids": ("I4210108629",), "rors": ("01s0wyf50",),
+        "aliases": ("computer network information center",)},
+    "WNLO": {"country": "CN", "openalex_ids": ("I4210138186",), "rors": ("03c9ncn37",),
+        "aliases": ("wuhan national laboratory for optoelectronics",)},
+    "PCL": {"country": "CN", "openalex_ids": ("I4210136793",), "rors": ("03qdqbt06",),
+        "aliases": ("peng cheng laboratory",)},
+    "ZJLAB": {"country": "CN", "openalex_ids": ("I4210123185",), "rors": ("02m2h7991",),
+        "aliases": ("zhejiang lab",)},
+    "PML": {"country": "CN", "openalex_ids": ("I4210155350",), "rors": ("04zcbk583",),
+        "aliases": ("purple mountain laboratories", "purple mountain laboratory")},
     "NSCC-TJ": {"country": "CN", "aliases": ("national supercomputing center in tianjin", "national supercomputer center in tianjin")},
     "NSCC-WX": {"country": "CN", "aliases": ("national supercomputing center in wuxi", "national supercomputer center in wuxi")},
     "NSCC-GZ": {"country": "CN", "aliases": ("national supercomputing center in guangzhou", "national supercomputer center in guangzhou")},
     "NSCC-CS": {"country": "CN", "aliases": ("national supercomputing center in changsha", "national supercomputer center in changsha")},
     "NSCC-JN": {"country": "CN", "aliases": ("national supercomputing center in jinan", "national supercomputer center in jinan")},
-    # Japan - national/public research agencies with HPC relevance
-    "RIKEN": {"country": "JP", "aliases": ("riken", "riken center for computational science")},
-    "AIST": {"country": "JP", "aliases": ("national institute of advanced industrial science and technology", "advanced industrial science and technology")},
+
+    # Japan: national/public research agencies and inter-university research institutes.
+    "RIKEN": {"country": "JP", "aliases": ("riken center for computational science", "riken")},
+    "AIST": {"country": "JP", "openalex_ids": ("I138495182",),
+        "aliases": ("national institute of advanced industrial science and technology", "advanced industrial science and technology")},
+    "NII": {"country": "JP", "openalex_ids": ("I184597095",), "rors": ("04ksd4g47",),
+        "aliases": ("national institute of informatics",)},
+    "NICT": {"country": "JP", "openalex_ids": ("I90023481",), "rors": ("016bgq349",),
+        "aliases": ("national institute of information and communications technology",)},
     "JAEA": {"country": "JP", "aliases": ("japan atomic energy agency",)},
     "JAMSTEC": {"country": "JP", "aliases": ("japan agency for marine-earth science and technology", "japan agency for marine earth science and technology")},
 }
@@ -56,22 +77,31 @@ class AnalysisResult:
     lab_university_papers: int
 
 
-def _lab_match(name: str) -> tuple[str, str] | None:
-    normalized = " ".join(name.lower().replace("&", "and").split())
+def _short_id(value: Any) -> str:
+    return str(value or "").rstrip("/").rsplit("/", 1)[-1]
+
+
+def _lab_match(inst: dict[str, Any]) -> tuple[str, str] | None:
+    name = " ".join(str(inst.get("display_name") or "").lower().replace("&", "and").split())
+    openalex_id = _short_id(inst.get("id"))
+    ror = _short_id(inst.get("ror"))
     for code, spec in RESEARCH_LABS.items():
-        if any(alias in normalized for alias in spec["aliases"]):
+        if openalex_id and openalex_id in spec.get("openalex_ids", ()):
+            return code, str(spec["country"])
+        if ror and ror in spec.get("rors", ()):
+            return code, str(spec["country"])
+        if name and any(alias in name for alias in spec.get("aliases", ())):
             return code, str(spec["country"])
     return None
 
 
 def _lab_code(name: str) -> str | None:
-    match = _lab_match(name)
+    match = _lab_match({"display_name": name})
     return match[0] if match else None
 
 
 def _classify(inst: dict[str, Any]) -> tuple[str, str | None]:
-    name = str(inst.get("display_name") or "")
-    match = _lab_match(name)
+    match = _lab_match(inst)
     if match:
         return "national_lab", match[0]
     kind = str(inst.get("type") or "").lower()
