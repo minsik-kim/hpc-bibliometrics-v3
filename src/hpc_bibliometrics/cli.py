@@ -7,6 +7,7 @@ from .collector import YearResult, collect_venue
 from .config import VENUES, get_venue
 from .enrich import enrich_venue
 from .openalex import OpenAlexClient
+from .report import build_validation_report
 
 app = typer.Typer(no_args_is_help=True, add_completion=False, help="Fast, cached bibliometric collection for HPC conferences.")
 
@@ -46,15 +47,25 @@ def enrich(venue: str = typer.Argument(...), from_year: int = typer.Option(2016,
 @app.command()
 def analyze(venue: str = typer.Argument(...), from_year: int = typer.Option(2016, "--from", min=1900),
             to_year: int = typer.Option(2025, "--to", min=1900), cache_dir: Path = typer.Option(Path("cache"), "--cache-dir", file_okay=False)) -> None:
-    """Classify institutions and summarize DOE National Lab collaboration."""
     try:
         get_venue(venue); result = analyze_collaboration(venue.lower(), from_year=from_year, to_year=to_year, cache_root=cache_dir)
     except (ValueError, RuntimeError) as exc:
         typer.echo(f"Error: {exc}", err=True); raise typer.Exit(code=1) from None
-    typer.echo(f"Total: {result.total} papers")
-    typer.echo(f"National Lab papers: {result.lab_papers}")
+    typer.echo(f"Total: {result.total} papers"); typer.echo(f"National Lab papers: {result.lab_papers}")
     typer.echo(f"National Lab + University papers: {result.lab_university_papers}")
     typer.echo(f"Yearly: {result.yearly_path}"); typer.echo(f"Institutions: {result.institutions_path}"); typer.echo(f"Papers: {result.papers_path}")
+
+@app.command()
+def report(venue: str = typer.Argument(...), from_year: int = typer.Option(2016, "--from", min=1900),
+           to_year: int = typer.Option(2025, "--to", min=1900), cache_dir: Path = typer.Option(Path("cache"), "--cache-dir", file_okay=False)) -> None:
+    """Build lab, university, and lab-university pair validation tables."""
+    try:
+        get_venue(venue); result = build_validation_report(venue.lower(), from_year=from_year, to_year=to_year, cache_root=cache_dir)
+    except (ValueError, RuntimeError) as exc:
+        typer.echo(f"Error: {exc}", err=True); raise typer.Exit(code=1) from None
+    typer.echo(f"Labs: {result.labs} -> {result.labs_path}")
+    typer.echo(f"Universities: {result.universities} -> {result.universities_path}")
+    typer.echo(f"Lab-University pairs: {result.pairs} -> {result.pairs_path}")
 
 @app.command("list-venues")
 def list_venues() -> None:
