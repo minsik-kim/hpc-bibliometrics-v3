@@ -9,16 +9,16 @@ from hpc_bibliometrics.dblp import DblpClient, DblpError
 
 HTML = '''
 <ul class="publ-list">
-<li class="entry inproceedings" id="conf/ipps/Example24" data-key="conf/ipps/Example24">
+<li data-key="conf/ipps/Example24" class="entry inproceedings toc">
 <span itemprop="author"><span itemprop="name">Ada Example</span></span>
-<span class="title" itemprop="name">Fast &amp; Correct HPC.</span>
+<span itemprop="name" class="title">Fast &amp; Correct HPC.</span>
 <a href="https://doi.org/10.1109/IPDPS.2024.123">DOI</a>
 </li>
 </ul>
 '''
 
 
-def test_dblp_parses_main_paper() -> None:
+def test_dblp_parses_main_paper_with_attribute_reordering() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         assert request.url.path.endswith("/db/conf/ipps/ipdps2024.html")
         return httpx.Response(200, text=HTML)
