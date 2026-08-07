@@ -29,4 +29,16 @@ RESEARCH_LABS.update({
         "rors": ("04f2f0537",),
         "aliases": ("pawsey supercomputing research centre", "pawsey supercomputing research center"),
     },
+    "BSC": {
+        "country": "ES",
+        "openalex_ids": ("I2799803557",),
+        "rors": ("05sd8tv96",),
+        "aliases": ("barcelona supercomputing center", "barcelona supercomputing centre"),
+    },
+    "AS-IIS": {
+        "country": "TW",
+        "openalex_ids": ("I4210098366",),
+        "rors": ("00z83z196",),
+        "aliases": ("institute of information science, academia sinica", "institute of information science academia sinica"),
+    },
 })
