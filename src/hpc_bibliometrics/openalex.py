@@ -146,9 +146,15 @@ class OpenAlexClient:
         raise OpenAlexError(f"OpenAlex request failed for {path}") from None
 
     def check_auth(self) -> dict[str, Any]:
-        """Validate the configured API key without exposing it."""
+        """Validate the configured key with a minimal real API request."""
 
-        return self._request("/rate-limit")
+        return self._request(
+            "/works",
+            {
+                "select": "id",
+                "per_page": 1,
+            },
+        )
 
     def resolve_source(self, venue: VenueSpec) -> dict[str, Any]:
         payload = self._request(f"/sources/{quote(venue.source_lookup, safe=':')}")
