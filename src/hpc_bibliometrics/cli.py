@@ -44,6 +44,7 @@ def report(venue:str=typer.Argument(...),from_year:int=typer.Option(2016,"--from
     typer.echo(f"Universities: {result.universities} -> {result.universities_path}")
     typer.echo(f"Institution-University pairs: {result.pairs} -> {result.pairs_path}")
     typer.echo(f"Subtype yearly trends: {result.subtype_yearly_path}")
+    typer.echo(f"Country x subtype summary: {result.country_subtype_path}")
 @app.command("audit-institutions")
 def audit_institutions(venue:str=typer.Argument(...),from_year:int=typer.Option(2016,"--from",min=1900),to_year:int=typer.Option(2025,"--to",min=1900),country:list[str]=typer.Option([],"--country","-c"),cache_dir:Path=typer.Option(Path("cache"),"--cache-dir",file_okay=False))->None:
     """List unclassified institutions, optionally filtered by country code."""
