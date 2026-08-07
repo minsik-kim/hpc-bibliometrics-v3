@@ -40,14 +40,14 @@ def build_validation_report(venue: str, *, from_year: int, to_year: int, cache_r
         for university in universities: university_papers[university] += 1
         for lab in labs:
             for university in universities: pair_papers[(lab, university)] += 1
-    labs_rows = [{"country": RESEARCH_LABS[lab]["country"], "lab_code": lab, "papers": count} for lab, count in lab_papers.most_common()]
+    labs_rows = [{"country": RESEARCH_LABS[lab]["country"], "lab_code": lab, "subtype": RESEARCH_LABS[lab].get("subtype", "national_lab"), "papers": count} for lab, count in lab_papers.most_common()]
     university_rows = [{"university": name, "papers": count} for name, count in university_papers.most_common()]
-    pair_rows = [{"country": RESEARCH_LABS[lab]["country"], "lab_code": lab, "university": university, "papers": count} for (lab, university), count in pair_papers.most_common()]
+    pair_rows = [{"country": RESEARCH_LABS[lab]["country"], "lab_code": lab, "subtype": RESEARCH_LABS[lab].get("subtype", "national_lab"), "university": university, "papers": count} for (lab, university), count in pair_papers.most_common()]
     out_dir = cache_root / venue / "analysis"; out_dir.mkdir(parents=True, exist_ok=True)
     labs_path = out_dir / f"labs-{from_year}-{to_year}.csv"; universities_path = out_dir / f"universities-{from_year}-{to_year}.csv"; pairs_path = out_dir / f"lab-university-pairs-{from_year}-{to_year}.csv"
-    pl.DataFrame(labs_rows, schema={"country": pl.String, "lab_code": pl.String, "papers": pl.Int64}).write_csv(labs_path)
+    pl.DataFrame(labs_rows, schema={"country": pl.String, "lab_code": pl.String, "subtype": pl.String, "papers": pl.Int64}).write_csv(labs_path)
     pl.DataFrame(university_rows, schema={"university": pl.String, "papers": pl.Int64}).write_csv(universities_path)
-    pl.DataFrame(pair_rows, schema={"country": pl.String, "lab_code": pl.String, "university": pl.String, "papers": pl.Int64}).write_csv(pairs_path)
+    pl.DataFrame(pair_rows, schema={"country": pl.String, "lab_code": pl.String, "subtype": pl.String, "university": pl.String, "papers": pl.Int64}).write_csv(pairs_path)
     return ReportResult(labs_path, universities_path, pairs_path, len(lab_papers), len(university_papers), len(pair_papers))
 
 
