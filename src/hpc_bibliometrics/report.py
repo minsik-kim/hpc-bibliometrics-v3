@@ -16,6 +16,7 @@ class ReportResult:
     universities_path: Path
     pairs_path: Path
     subtype_yearly_path: Path
+    country_subtype_path: Path
     labs: int
     universities: int
     pairs: int
@@ -35,6 +36,7 @@ def build_validation_report(venue: str, *, from_year: int, to_year: int, cache_r
     university_papers: Counter[str] = Counter()
     pair_papers: Counter[tuple[str, str]] = Counter()
     subtype_yearly: Counter[tuple[int, str, str]] = Counter()
+    country_subtype: Counter[tuple[str, str, str]] = Counter()
 
     for row in pl.read_parquet(source).to_dicts():
         institutions = json.loads(row.get("institutions_json") or "[]")
@@ -66,6 +68,15 @@ def build_validation_report(venue: str, *, from_year: int, to_year: int, cache_r
             if universities:
                 subtype_yearly[(year, subtype, "university_collaboration_papers")] += 1
 
+        country_subtypes = {
+            (str(RESEARCH_LABS[lab]["country"]), str(RESEARCH_LABS[lab].get("subtype", "national_lab")))
+            for lab in labs
+        }
+        for country, subtype in country_subtypes:
+            country_subtype[(country, subtype, "papers")] += 1
+            if universities:
+                country_subtype[(country, subtype, "university_collaboration_papers")] += 1
+
     labs_rows = [
         {"country": RESEARCH_LABS[lab]["country"], "lab_code": lab,
          "subtype": RESEARCH_LABS[lab].get("subtype", "national_lab"), "papers": count}
@@ -92,19 +103,34 @@ def build_validation_report(venue: str, *, from_year: int, to_year: int, cache_r
             "university_collaboration_pct": round((collab / papers * 100) if papers else 0.0, 2),
         })
 
+    country_subtype_keys = sorted({(country, subtype) for country, subtype, _metric in country_subtype})
+    country_subtype_rows = []
+    for country, subtype in country_subtype_keys:
+        papers = country_subtype[(country, subtype, "papers")]
+        collab = country_subtype[(country, subtype, "university_collaboration_papers")]
+        country_subtype_rows.append({
+            "country": country,
+            "subtype": subtype,
+            "papers": papers,
+            "university_collaboration_papers": collab,
+            "university_collaboration_pct": round((collab / papers * 100) if papers else 0.0, 2),
+        })
+
     out_dir = cache_root / venue / "analysis"
     out_dir.mkdir(parents=True, exist_ok=True)
     labs_path = out_dir / f"labs-{from_year}-{to_year}.csv"
     universities_path = out_dir / f"universities-{from_year}-{to_year}.csv"
     pairs_path = out_dir / f"lab-university-pairs-{from_year}-{to_year}.csv"
     subtype_yearly_path = out_dir / f"public-research-subtypes-yearly-{from_year}-{to_year}.csv"
+    country_subtype_path = out_dir / f"public-research-country-subtypes-{from_year}-{to_year}.csv"
 
     pl.DataFrame(labs_rows, schema={"country": pl.String, "lab_code": pl.String, "subtype": pl.String, "papers": pl.Int64}).write_csv(labs_path)
     pl.DataFrame(university_rows, schema={"university": pl.String, "papers": pl.Int64}).write_csv(universities_path)
     pl.DataFrame(pair_rows, schema={"country": pl.String, "lab_code": pl.String, "subtype": pl.String, "university": pl.String, "papers": pl.Int64}).write_csv(pairs_path)
     pl.DataFrame(subtype_rows, schema={"publication_year": pl.Int64, "subtype": pl.String, "papers": pl.Int64, "university_collaboration_papers": pl.Int64, "university_collaboration_pct": pl.Float64}).write_csv(subtype_yearly_path)
+    pl.DataFrame(country_subtype_rows, schema={"country": pl.String, "subtype": pl.String, "papers": pl.Int64, "university_collaboration_papers": pl.Int64, "university_collaboration_pct": pl.Float64}).write_csv(country_subtype_path)
 
-    return ReportResult(labs_path, universities_path, pairs_path, subtype_yearly_path, len(lab_papers), len(university_papers), len(pair_papers))
+    return ReportResult(labs_path, universities_path, pairs_path, subtype_yearly_path, country_subtype_path, len(lab_papers), len(university_papers), len(pair_papers))
 
 
 def audit_other_institutions(venue: str, *, from_year: int, to_year: int, countries: set[str] | None = None, cache_root: Path = Path("cache")) -> AuditResult:
