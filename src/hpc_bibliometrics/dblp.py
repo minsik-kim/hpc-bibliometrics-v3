@@ -17,16 +17,36 @@ class DblpError(RuntimeError):
     """Raised when DBLP cannot provide a conference roster."""
 
 
-_ENTRY_RE = re.compile(r'<li class="entry (?:inproceedings|proceedings)".*?</li>', re.S)
-_TITLE_RE = re.compile(r'<span class="title" itemprop="name">(.*?)</span>', re.S)
-_DOI_RE = re.compile(r'href="https?://doi\.org/([^"?#]+)"')
-_KEY_RE = re.compile(r'data-key="([^"]+)"')
-_AUTHOR_RE = re.compile(r'<span itemprop="author".*?<span itemprop="name">(.*?)</span>', re.S)
-_TAG_RE = re.compile(r'<[^>]+>')
+# DBLP's HTML evolves over time. Do not require a specific class ordering or
+# exact attribute set: first isolate every <li>, then retain entries whose
+# class list contains "entry" and "inproceedings".
+_LI_RE = re.compile(r"<li\b(?P<attrs>[^>]*)>(?P<body>.*?)</li>", re.S | re.I)
+_CLASS_RE = re.compile(r'''\bclass\s*=\s*["']([^"']*)["']''', re.I)
+_TITLE_RE = re.compile(
+    r'''<span\b(?=[^>]*\bclass\s*=\s*["'][^"']*\btitle\b[^"']*["'])(?=[^>]*\bitemprop\s*=\s*["']name["'])[^>]*>(.*?)</span>''',
+    re.S | re.I,
+)
+_DOI_RE = re.compile(r'''href\s*=\s*["']https?://doi\.org/([^"'?#]+)["']''', re.I)
+_KEY_RE = re.compile(r'''\bdata-key\s*=\s*["']([^"']+)["']''', re.I)
+_ID_RE = re.compile(r'''\bid\s*=\s*["']([^"']+)["']''', re.I)
+_AUTHOR_RE = re.compile(
+    r'''<span\b(?=[^>]*\bitemprop\s*=\s*["']author["'])[^>]*>.*?<span\b(?=[^>]*\bitemprop\s*=\s*["']name["'])[^>]*>(.*?)</span>''',
+    re.S | re.I,
+)
+_TAG_RE = re.compile(r"<[^>]+>")
 
 
 def _text(value: str) -> str:
     return html.unescape(_TAG_RE.sub("", value)).strip()
+
+
+def _paper_entries(page: str) -> Iterator[tuple[str, str]]:
+    for match in _LI_RE.finditer(page):
+        attrs = match.group("attrs")
+        class_match = _CLASS_RE.search(attrs)
+        classes = set(class_match.group(1).split()) if class_match else set()
+        if "entry" in classes and "inproceedings" in classes:
+            yield attrs, match.group("body")
 
 
 class DblpClient:
@@ -85,16 +105,13 @@ class DblpClient:
         path = venue.dblp_toc_pattern.format(year=year)
         page = self._get_text(path)
         found = 0
-        for entry in _ENTRY_RE.findall(page):
-            # The volume-level proceedings entry is not a paper.
-            if 'class="entry proceedings"' in entry:
-                continue
-            title_match = _TITLE_RE.search(entry)
-            key_match = _KEY_RE.search(entry)
+        for attrs, body in _paper_entries(page):
+            title_match = _TITLE_RE.search(body)
+            key_match = _KEY_RE.search(attrs) or _ID_RE.search(attrs)
             if not title_match or not key_match:
                 continue
-            doi_match = _DOI_RE.search(entry)
-            authors = [_text(value) for value in _AUTHOR_RE.findall(entry)]
+            doi_match = _DOI_RE.search(body)
+            authors = [_text(value) for value in _AUTHOR_RE.findall(body)]
             found += 1
             yield {
                 "dblp_key": html.unescape(key_match.group(1)),
