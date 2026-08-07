@@ -43,6 +43,7 @@ def test_resolve_source_and_paginate_works() -> None:
     assert [work["id"] for work in works] == ["https://openalex.org/W1"]
     assert len(calls) == 3
     assert "primary_location.source.id%3AS123" in calls[1]
+    assert "include_xpac=true" in calls[1]
     assert "per_page=100" in calls[1]
 
 
