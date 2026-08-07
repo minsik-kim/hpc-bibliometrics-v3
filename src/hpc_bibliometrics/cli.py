@@ -40,7 +40,10 @@ def analyze(venue:str=typer.Argument(...),from_year:int=typer.Option(2016,"--fro
 def report(venue:str=typer.Argument(...),from_year:int=typer.Option(2016,"--from",min=1900),to_year:int=typer.Option(2025,"--to",min=1900),cache_dir:Path=typer.Option(Path("cache"),"--cache-dir",file_okay=False))->None:
     try: get_venue(venue); result=build_validation_report(venue.lower(),from_year=from_year,to_year=to_year,cache_root=cache_dir)
     except (ValueError,RuntimeError) as exc: typer.echo(f"Error: {exc}",err=True); raise typer.Exit(code=1) from None
-    typer.echo(f"Public research institutions: {result.labs} -> {result.labs_path}"); typer.echo(f"Universities: {result.universities} -> {result.universities_path}"); typer.echo(f"Institution-University pairs: {result.pairs} -> {result.pairs_path}")
+    typer.echo(f"Public research institutions: {result.labs} -> {result.labs_path}")
+    typer.echo(f"Universities: {result.universities} -> {result.universities_path}")
+    typer.echo(f"Institution-University pairs: {result.pairs} -> {result.pairs_path}")
+    typer.echo(f"Subtype yearly trends: {result.subtype_yearly_path}")
 @app.command("audit-institutions")
 def audit_institutions(venue:str=typer.Argument(...),from_year:int=typer.Option(2016,"--from",min=1900),to_year:int=typer.Option(2025,"--to",min=1900),country:list[str]=typer.Option([],"--country","-c"),cache_dir:Path=typer.Option(Path("cache"),"--cache-dir",file_okay=False))->None:
     """List unclassified institutions, optionally filtered by country code."""
