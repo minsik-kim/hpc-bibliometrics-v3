@@ -11,6 +11,30 @@ RESEARCH_LABS.update({
     "PAWSEY": {"country": "AU", "subtype": "national_compute_center", "openalex_ids": ("I2801909468",), "rors": ("04f2f0537",), "aliases": ("pawsey supercomputing research centre", "pawsey supercomputing research center")},
     "BSC": {"country": "ES", "subtype": "national_compute_center", "openalex_ids": ("I2799803557",), "rors": ("05sd8tv96",), "aliases": ("barcelona supercomputing center", "barcelona supercomputing centre")},
     "AS-IIS": {"country": "TW", "subtype": "public_research_institute", "openalex_ids": ("I4210098366",), "rors": ("00z83z196",), "aliases": ("institute of information science, academia sinica", "institute of information science academia sinica")},
+    "CSCS": {"country": "CH", "subtype": "national_compute_center", "openalex_ids": ("I4391767926",), "rors": ("04rzmms09",), "aliases": ("cscs - swiss national supercomputing centre", "swiss national supercomputing centre", "swiss national supercomputing center")},
+    "CINECA": {"country": "IT", "subtype": "national_compute_center", "openalex_ids": ("I4210119786",), "rors": ("02f013h18",), "aliases": ("cineca",)},
+    "NERSC": {"country": "US", "subtype": "national_compute_center", "openalex_ids": ("I4210151627",), "rors": ("05v3mvq14",), "aliases": ("national energy research scientific computing center", "nersc")},
+    "TACC": {"country": "US", "subtype": "national_compute_center", "openalex_ids": ("I4388891828",), "rors": ("00xg4bh43",), "aliases": ("texas advanced computing center", "texas advanced computing centre")},
+    "FZJ": {"country": "DE", "subtype": "public_research_institute", "openalex_ids": ("I171892758",), "rors": ("02nv7yv05",), "aliases": ("forschungszentrum jülich", "forschungszentrum julich", "julich research centre", "julich research center")},
+    "SIMULA": {"country": "NO", "subtype": "public_research_institute", "openalex_ids": ("I2799829267",), "rors": ("00vn06n10",), "aliases": ("simula research laboratory",)},
+    "MIT-LL": {"country": "US", "subtype": "government_research_institute", "openalex_ids": ("I4210122954",), "rors": ("022z6jk58",), "aliases": ("mit lincoln laboratory", "massachusetts institute of technology lincoln laboratory")},
+    "JLAB": {"country": "US", "subtype": "national_lab", "openalex_ids": ("I29801172",), "rors": ("02vwzrd76",), "aliases": ("thomas jefferson national accelerator facility", "jefferson lab")},
+    "JGI": {"country": "US", "subtype": "public_research_institute", "openalex_ids": ("I196679689",), "rors": ("04xm1d337",), "aliases": ("joint genome institute", "doe joint genome institute")},
+    "NCSA": {"country": "US", "subtype": "national_compute_center", "openalex_ids": ("I4210135837",), "rors": ("03r10zj06",), "aliases": ("national center for supercomputing applications", "national centre for supercomputing applications")},
+    "DKRZ": {"country": "DE", "subtype": "national_compute_center", "openalex_ids": ("I2800289517",), "rors": ("03ztgj037",), "aliases": ("german climate computing centre", "german climate computing center", "deutsches klimarechenzentrum")},
+    "NCAR": {"country": "US", "subtype": "government_research_institute", "openalex_ids": ("I107766831",), "rors": ("05cvfcr44",), "aliases": ("nsf national center for atmospheric research", "national center for atmospheric research", "national centre for atmospheric research")},
+})
+
+# Identifier/name updates for existing entries discovered in the SC audit.
+RESEARCH_LABS["NREL"].update({
+    "openalex_ids": ("I1297288678",),
+    "rors": ("036266993",),
+    "aliases": RESEARCH_LABS["NREL"]["aliases"] + ("national laboratory of the rockies",),
+})
+RESEARCH_LABS["NSCC-TJ"].update({
+    "openalex_ids": ("I4210165734",),
+    "rors": ("05tngxm14",),
+    "aliases": RESEARCH_LABS["NSCC-TJ"]["aliases"] + ("national supercomputing center of tianjin",),
 })
 
 # Backward-compatible metadata layer. The existing `national_lab` category remains

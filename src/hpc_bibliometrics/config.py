@@ -19,6 +19,15 @@ VENUES: dict[str, VenueSpec] = {
         # Main-conference TOC. Workshops use a separate DBLP page/key.
         dblp_toc_pattern="db/conf/ipps/ipdps{year}.html",
     ),
+    "sc": VenueSpec(
+        key="sc",
+        display_name=(
+            "International Conference for High Performance Computing, Networking, "
+            "Storage, and Analysis"
+        ),
+        # Main proceedings only. SC workshops use separate pages such as sc2024w.html.
+        dblp_toc_pattern="db/conf/sc/sc{year}.html",
+    ),
 }
 
 

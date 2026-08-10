@@ -1,4 +1,5 @@
 .venv/
+.env.openalex
 __pycache__/
 *.py[cod]
 .pytest_cache/

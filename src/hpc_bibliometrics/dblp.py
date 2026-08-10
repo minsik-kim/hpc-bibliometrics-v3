@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import html
+import re
 import ssl
 import time
 from collections.abc import Iterator
@@ -26,6 +27,18 @@ def _strip_doi(value: str | None) -> str | None:
             text = text[len(prefix) :]
             break
     return text.lower() or None
+
+
+def _sc_2018_doi(entry: Any, venue: VenueSpec, year: int) -> str | None:
+    """Recover SC 2018's IEEE DOI from DBLP's legacy article pagination."""
+    if venue.key != "sc" or year != 2018:
+        return None
+    pagination = entry.select_one('[itemprop="pagination"]')
+    match = re.fullmatch(r"(\d+):\d+-(?:\1:)?\d+", pagination.get_text(strip=True) if pagination else "")
+    if match is None:
+        return None
+    article = int(match.group(1))
+    return f"10.1109/sc.2018.{article + 3:05d}"
 
 
 class DblpClient:
@@ -104,6 +117,8 @@ class DblpClient:
             doi_link = entry.select_one('a[href^="https://doi.org/"], a[href^="http://doi.org/"]')
             if doi_link is not None:
                 doi = _strip_doi(str(doi_link.get("href") or ""))
+            if doi is None:
+                doi = _sc_2018_doi(entry, venue, year)
 
             found += 1
             yield {

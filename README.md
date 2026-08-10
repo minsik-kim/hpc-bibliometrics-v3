@@ -6,7 +6,7 @@ The pipeline builds an exact main-conference paper roster from DBLP, enriches th
 
 ## Current scope
 
-- IPDPS main conference, 2016-2025
+- IPDPS and SC main conferences, 2016-2025
 - Exact main-conference roster from DBLP TOC pages
 - Parallel collection with resumable local caches
 - DOI-based OpenAlex enrichment
@@ -14,7 +14,7 @@ The pipeline builds an exact main-conference paper roster from DBLP, enriches th
 - Paper-level deduplication for institution, subtype, country, and collaboration statistics
 - Auditing of still-unclassified institutions by country
 
-The public research institution registry currently spans organizations in the United States, China, Japan, Korea, Germany, France, the United Kingdom, the Netherlands, Australia, Spain, and Taiwan. Broad parent organizations such as CAS and CNRS are intentionally not classified wholesale when that would overstate institution-level participation.
+The public research institution registry currently spans organizations in the United States, China, Japan, Korea, Germany, France, the United Kingdom, the Netherlands, Australia, Spain, Taiwan, Switzerland, Italy, and Norway. Broad parent organizations such as CAS and CNRS are intentionally not classified wholesale when that would overstate institution-level participation.
 
 ## Install on macOS
 
@@ -35,12 +35,19 @@ hpc-bib check-auth
 
 The key is passed only to OpenAlex and is not written to the cache.
 
-## End-to-end IPDPS workflow
+## End-to-end workflow
+
+Use `ipdps` or `sc` as the venue argument. For SC, the DBLP roster uses the main
+proceedings pages and excludes the separately indexed workshop proceedings.
+SC 2018 is a documented publisher-link exception: DBLP exposes legacy ACM links
+rather than DOI links, so the collector recovers the IEEE DOI from the proceeding's
+article pagination before OpenAlex enrichment.
 
 ### 1. Collect the DBLP roster
 
 ```bash
 hpc-bib collect ipdps --from 2016 --to 2025 --workers 4
+# SC: hpc-bib collect sc --from 2016 --to 2025 --workers 4
 ```
 
 Use `--refresh` to rebuild cached yearly rosters.
@@ -49,6 +56,7 @@ Use `--refresh` to rebuild cached yearly rosters.
 
 ```bash
 hpc-bib enrich ipdps --from 2016 --to 2025 --workers 4
+# SC: hpc-bib enrich sc --from 2016 --to 2025 --workers 4
 ```
 
 This matches the DBLP roster to OpenAlex and writes:
@@ -100,6 +108,29 @@ cache/ipdps/analysis/public-research-subtype-combinations-2016-2025.csv
 The yearly and country subtype reports use overlapping participation counts. A paper with multiple public-research subtypes contributes once to every subtype represented, while duplicate institutions of the same subtype or country/subtype combination still count only once.
 
 The subtype-combination report is exclusive. Every public-research paper belongs to exactly one sorted subtype combination. Therefore, the sum of its `papers` column equals the unique public-research paper count, and the sum for rows where `subtype_count > 1` equals the multi-subtype paper count. The report command validates both invariants before writing any CSV output.
+
+## Validated 2016-2025 snapshots
+
+These snapshots use the same global registry for every venue. Adding a conservatively
+verified institution can therefore update earlier venue totals as well as the new venue.
+
+| Metric | IPDPS | SC |
+| --- | ---: | ---: |
+| DBLP main-conference papers | 1,097 | 994 |
+| OpenAlex matched papers | 1,096 | 991 |
+| Public research institution papers | 344 | 445 |
+| Public research institution + university papers | 276 | 352 |
+| Public research institutions | 50 | 52 |
+| Universities | 461 | 387 |
+| Institution-university pairs | 378 | 631 |
+| Multi-subtype papers | 15 | 40 |
+| US `national_lab` papers | 223 | 307 |
+| US `national_lab` + university papers | 171 | 232 |
+
+For both venues, the exclusive subtype-combination `papers` sum equals the unique
+public-research paper count. SC has three DOI-bearing papers that OpenAlex does not
+currently match (two from 2021 and one from 2023); they remain in the DBLP roster with
+an explicit `unmatched` status.
 
 ## Audit unclassified institutions
 
