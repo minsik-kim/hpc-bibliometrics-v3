@@ -31,20 +31,16 @@ def enrich(venue: str=typer.Argument(...),from_year:int=typer.Option(2016,"--fro
 def analyze(venue:str=typer.Argument(...),from_year:int=typer.Option(2016,"--from",min=1900),to_year:int=typer.Option(2025,"--to",min=1900),cache_dir:Path=typer.Option(Path("cache"),"--cache-dir",file_okay=False))->None:
     try: get_venue(venue); result=analyze_collaboration(venue.lower(),from_year=from_year,to_year=to_year,cache_root=cache_dir)
     except (ValueError,RuntimeError) as exc: typer.echo(f"Error: {exc}",err=True); raise typer.Exit(code=1) from None
-    typer.echo(f"Total: {result.total} papers")
-    typer.echo(f"Public research institution papers: {result.lab_papers}")
-    typer.echo(f"Public research institution + University papers: {result.lab_university_papers}")
+    typer.echo(f"Total: {result.total} papers"); typer.echo(f"Public research institution papers: {result.lab_papers}"); typer.echo(f"Public research institution + University papers: {result.lab_university_papers}")
     typer.echo("Note: legacy CSV field names containing 'national_lab' are retained for compatibility.")
     typer.echo(f"Yearly: {result.yearly_path}"); typer.echo(f"Institutions: {result.institutions_path}"); typer.echo(f"Papers: {result.papers_path}")
 @app.command()
 def report(venue:str=typer.Argument(...),from_year:int=typer.Option(2016,"--from",min=1900),to_year:int=typer.Option(2025,"--to",min=1900),cache_dir:Path=typer.Option(Path("cache"),"--cache-dir",file_okay=False))->None:
     try: get_venue(venue); result=build_validation_report(venue.lower(),from_year=from_year,to_year=to_year,cache_root=cache_dir)
     except (ValueError,RuntimeError) as exc: typer.echo(f"Error: {exc}",err=True); raise typer.Exit(code=1) from None
-    typer.echo(f"Public research institutions: {result.labs} -> {result.labs_path}")
-    typer.echo(f"Universities: {result.universities} -> {result.universities_path}")
-    typer.echo(f"Institution-University pairs: {result.pairs} -> {result.pairs_path}")
-    typer.echo(f"Subtype yearly trends: {result.subtype_yearly_path}")
-    typer.echo(f"Country x subtype summary: {result.country_subtype_path}")
+    typer.echo(f"Public research institutions: {result.labs} -> {result.labs_path}"); typer.echo(f"Universities: {result.universities} -> {result.universities_path}"); typer.echo(f"Institution-University pairs: {result.pairs} -> {result.pairs_path}")
+    typer.echo(f"Unique public research papers: {result.public_research_papers}"); typer.echo(f"Multi-subtype papers: {result.multi_subtype_papers}")
+    typer.echo(f"Subtype yearly trends: {result.subtype_yearly_path}"); typer.echo(f"Country x subtype summary: {result.country_subtype_path}"); typer.echo(f"Exclusive subtype combinations: {result.subtype_combinations_path}")
 @app.command("audit-institutions")
 def audit_institutions(venue:str=typer.Argument(...),from_year:int=typer.Option(2016,"--from",min=1900),to_year:int=typer.Option(2025,"--to",min=1900),country:list[str]=typer.Option([],"--country","-c"),cache_dir:Path=typer.Option(Path("cache"),"--cache-dir",file_okay=False))->None:
     """List unclassified institutions, optionally filtered by country code."""
