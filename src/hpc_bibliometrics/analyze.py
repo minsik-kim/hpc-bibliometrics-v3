@@ -125,8 +125,12 @@ def _short_id(value: Any) -> str:
     return str(value or "").rstrip("/").rsplit("/", 1)[-1]
 
 
+def _normalize_institution_name(value: Any) -> str:
+    return " ".join(str(value or "").lower().replace("&", "and").split())
+
+
 def _lab_match(inst: dict[str, Any]) -> tuple[str, str] | None:
-    name = " ".join(str(inst.get("display_name") or "").lower().replace("&", "and").split())
+    name = _normalize_institution_name(inst.get("display_name"))
     openalex_id = _short_id(inst.get("id"))
     ror = _short_id(inst.get("ror"))
     for code, spec in RESEARCH_LABS.items():
@@ -134,7 +138,8 @@ def _lab_match(inst: dict[str, Any]) -> tuple[str, str] | None:
             return code, str(spec["country"])
         if ror and ror in spec.get("rors", ()):
             return code, str(spec["country"])
-        if name and any(alias in name for alias in spec.get("aliases", ())):
+        aliases = (_normalize_institution_name(alias) for alias in spec.get("aliases", ()))
+        if name and any(alias in name for alias in aliases):
             return code, str(spec["country"])
     return None
 

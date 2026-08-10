@@ -1,53 +1,197 @@
 from __future__ import annotations
+
 from pathlib import Path
+
 import typer
+
 from .analyze import analyze_collaboration
 from .collector import YearResult, collect_venue
 from .config import VENUES, get_venue
 from .enrich import enrich_venue
 from .openalex import OpenAlexClient
 from .report import audit_other_institutions, build_validation_report
-app = typer.Typer(no_args_is_help=True, add_completion=False, help="Fast, cached bibliometric collection for HPC conferences.")
+
+app = typer.Typer(
+    no_args_is_help=True,
+    add_completion=False,
+    help="Fast, cached bibliometric collection for HPC conferences.",
+)
+
+
 @app.command("check-auth")
 def check_auth() -> None:
     try:
-        with OpenAlexClient() as client: client.check_auth()
-    except RuntimeError as exc: typer.echo(f"Error: {exc}", err=True); raise typer.Exit(code=1) from None
+        with OpenAlexClient() as client:
+            client.check_auth()
+    except RuntimeError as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(code=1) from None
     typer.echo("OpenAlex authentication: OK")
+
+
 @app.command()
-def collect(venue: str = typer.Argument(...), from_year: int = typer.Option(2016,"--from","--from-year",min=1900), to_year: int = typer.Option(2025,"--to","--to-year",min=1900), cache_dir: Path = typer.Option(Path("cache"),"--cache-dir",file_okay=False), workers: int = typer.Option(4,"--workers","-j",min=1,max=10), refresh: bool = typer.Option(False,"--refresh")) -> None:
+def collect(
+    venue: str = typer.Argument(...),
+    from_year: int = typer.Option(2016, "--from", "--from-year", min=1900),
+    to_year: int = typer.Option(2025, "--to", "--to-year", min=1900),
+    cache_dir: Path = typer.Option(Path("cache"), "--cache-dir", file_okay=False),
+    workers: int = typer.Option(4, "--workers", "-j", min=1, max=10),
+    refresh: bool = typer.Option(False, "--refresh"),
+) -> None:
     try:
-        spec=get_venue(venue); typer.echo(f"Collecting {spec.key.upper()} {from_year}-{to_year} from DBLP with {workers} worker(s)...")
-        def report_year(item: YearResult)->None: typer.echo(f"{item.year}: {item.count:4d} papers [{'cached' if item.cached else 'downloaded'}]")
-        result=collect_venue(spec,from_year=from_year,to_year=to_year,cache_root=cache_dir,workers=workers,refresh=refresh,on_year=report_year)
-    except (ValueError,RuntimeError) as exc: typer.echo(f"Error: {exc}",err=True); raise typer.Exit(code=1) from None
-    typer.echo(f"Roster: {result.source['provider']} - {result.source['display_name']}"); typer.echo(f"Total: {result.total_count} papers"); typer.echo(f"Manifest: {result.manifest}")
+        spec = get_venue(venue)
+        typer.echo(
+            f"Collecting {spec.key.upper()} {from_year}-{to_year} from DBLP "
+            f"with {workers} worker(s)..."
+        )
+
+        def report_year(item: YearResult) -> None:
+            source = "cached" if item.cached else "downloaded"
+            typer.echo(f"{item.year}: {item.count:4d} papers [{source}]")
+
+        result = collect_venue(
+            spec,
+            from_year=from_year,
+            to_year=to_year,
+            cache_root=cache_dir,
+            workers=workers,
+            refresh=refresh,
+            on_year=report_year,
+        )
+    except (ValueError, RuntimeError) as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(code=1) from None
+    typer.echo(f"Roster: {result.source['provider']} - {result.source['display_name']}")
+    typer.echo(f"Total: {result.total_count} papers")
+    typer.echo(f"Manifest: {result.manifest}")
+
+
 @app.command()
-def enrich(venue: str=typer.Argument(...),from_year:int=typer.Option(2016,"--from",min=1900),to_year:int=typer.Option(2025,"--to",min=1900),cache_dir:Path=typer.Option(Path("cache"),"--cache-dir",file_okay=False),workers:int=typer.Option(4,"--workers","-j",min=1,max=10),refresh:bool=typer.Option(False,"--refresh"))->None:
-    try: get_venue(venue); typer.echo(f"Enriching {venue.upper()} {from_year}-{to_year} with OpenAlex using {workers} worker(s)..."); result=enrich_venue(venue.lower(),from_year=from_year,to_year=to_year,cache_root=cache_dir,workers=workers,refresh=refresh)
-    except (ValueError,RuntimeError) as exc: typer.echo(f"Error: {exc}",err=True); raise typer.Exit(code=1) from None
-    typer.echo(f"Total: {result.total} papers"); typer.echo(f"Matched: {result.matched}; missing DOI: {result.missing_doi}; unmatched: {result.unmatched}"); typer.echo(f"Enrichment: {result.path}")
+def enrich(
+    venue: str = typer.Argument(...),
+    from_year: int = typer.Option(2016, "--from", min=1900),
+    to_year: int = typer.Option(2025, "--to", min=1900),
+    cache_dir: Path = typer.Option(Path("cache"), "--cache-dir", file_okay=False),
+    workers: int = typer.Option(4, "--workers", "-j", min=1, max=10),
+    refresh: bool = typer.Option(False, "--refresh"),
+) -> None:
+    try:
+        get_venue(venue)
+        typer.echo(
+            f"Enriching {venue.upper()} {from_year}-{to_year} with OpenAlex "
+            f"using {workers} worker(s)..."
+        )
+        result = enrich_venue(
+            venue.lower(),
+            from_year=from_year,
+            to_year=to_year,
+            cache_root=cache_dir,
+            workers=workers,
+            refresh=refresh,
+        )
+    except (ValueError, RuntimeError) as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(code=1) from None
+    typer.echo(f"Total: {result.total} papers")
+    typer.echo(
+        f"Matched: {result.matched}; missing DOI: {result.missing_doi}; "
+        f"unmatched: {result.unmatched}"
+    )
+    typer.echo(f"Enrichment: {result.path}")
+
+
 @app.command()
-def analyze(venue:str=typer.Argument(...),from_year:int=typer.Option(2016,"--from",min=1900),to_year:int=typer.Option(2025,"--to",min=1900),cache_dir:Path=typer.Option(Path("cache"),"--cache-dir",file_okay=False))->None:
-    try: get_venue(venue); result=analyze_collaboration(venue.lower(),from_year=from_year,to_year=to_year,cache_root=cache_dir)
-    except (ValueError,RuntimeError) as exc: typer.echo(f"Error: {exc}",err=True); raise typer.Exit(code=1) from None
-    typer.echo(f"Total: {result.total} papers"); typer.echo(f"Public research institution papers: {result.lab_papers}"); typer.echo(f"Public research institution + University papers: {result.lab_university_papers}")
-    typer.echo("Note: legacy CSV field names containing 'national_lab' are retained for compatibility.")
-    typer.echo(f"Yearly: {result.yearly_path}"); typer.echo(f"Institutions: {result.institutions_path}"); typer.echo(f"Papers: {result.papers_path}")
+def analyze(
+    venue: str = typer.Argument(...),
+    from_year: int = typer.Option(2016, "--from", min=1900),
+    to_year: int = typer.Option(2025, "--to", min=1900),
+    cache_dir: Path = typer.Option(Path("cache"), "--cache-dir", file_okay=False),
+) -> None:
+    try:
+        get_venue(venue)
+        result = analyze_collaboration(
+            venue.lower(),
+            from_year=from_year,
+            to_year=to_year,
+            cache_root=cache_dir,
+        )
+    except (ValueError, RuntimeError) as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(code=1) from None
+    typer.echo(f"Total: {result.total} papers")
+    typer.echo(f"Public research institution papers: {result.lab_papers}")
+    typer.echo(
+        "Public research institution + University papers: "
+        f"{result.lab_university_papers}"
+    )
+    typer.echo(
+        "Note: legacy CSV field names containing 'national_lab' are retained "
+        "for compatibility."
+    )
+    typer.echo(f"Yearly: {result.yearly_path}")
+    typer.echo(f"Institutions: {result.institutions_path}")
+    typer.echo(f"Papers: {result.papers_path}")
+
+
 @app.command()
-def report(venue:str=typer.Argument(...),from_year:int=typer.Option(2016,"--from",min=1900),to_year:int=typer.Option(2025,"--to",min=1900),cache_dir:Path=typer.Option(Path("cache"),"--cache-dir",file_okay=False))->None:
-    try: get_venue(venue); result=build_validation_report(venue.lower(),from_year=from_year,to_year=to_year,cache_root=cache_dir)
-    except (ValueError,RuntimeError) as exc: typer.echo(f"Error: {exc}",err=True); raise typer.Exit(code=1) from None
-    typer.echo(f"Public research institutions: {result.labs} -> {result.labs_path}"); typer.echo(f"Universities: {result.universities} -> {result.universities_path}"); typer.echo(f"Institution-University pairs: {result.pairs} -> {result.pairs_path}")
-    typer.echo(f"Unique public research papers: {result.public_research_papers}"); typer.echo(f"Multi-subtype papers: {result.multi_subtype_papers}")
-    typer.echo(f"Subtype yearly trends: {result.subtype_yearly_path}"); typer.echo(f"Country x subtype summary: {result.country_subtype_path}"); typer.echo(f"Exclusive subtype combinations: {result.subtype_combinations_path}")
+def report(
+    venue: str = typer.Argument(...),
+    from_year: int = typer.Option(2016, "--from", min=1900),
+    to_year: int = typer.Option(2025, "--to", min=1900),
+    cache_dir: Path = typer.Option(Path("cache"), "--cache-dir", file_okay=False),
+) -> None:
+    try:
+        get_venue(venue)
+        result = build_validation_report(
+            venue.lower(),
+            from_year=from_year,
+            to_year=to_year,
+            cache_root=cache_dir,
+        )
+    except (ValueError, RuntimeError) as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(code=1) from None
+    typer.echo(f"Public research institutions: {result.labs} -> {result.labs_path}")
+    typer.echo(f"Universities: {result.universities} -> {result.universities_path}")
+    typer.echo(f"Institution-University pairs: {result.pairs} -> {result.pairs_path}")
+    typer.echo(f"Unique public research papers: {result.public_research_papers}")
+    typer.echo(f"Multi-subtype papers: {result.multi_subtype_papers}")
+    typer.echo(f"Subtype yearly trends: {result.subtype_yearly_path}")
+    typer.echo(f"Country x subtype summary: {result.country_subtype_path}")
+    typer.echo(f"Exclusive subtype combinations: {result.subtype_combinations_path}")
+
+
 @app.command("audit-institutions")
-def audit_institutions(venue:str=typer.Argument(...),from_year:int=typer.Option(2016,"--from",min=1900),to_year:int=typer.Option(2025,"--to",min=1900),country:list[str]=typer.Option([],"--country","-c"),cache_dir:Path=typer.Option(Path("cache"),"--cache-dir",file_okay=False))->None:
+def audit_institutions(
+    venue: str = typer.Argument(...),
+    from_year: int = typer.Option(2016, "--from", min=1900),
+    to_year: int = typer.Option(2025, "--to", min=1900),
+    country: list[str] = typer.Option([], "--country", "-c"),
+    cache_dir: Path = typer.Option(Path("cache"), "--cache-dir", file_okay=False),
+) -> None:
     """List unclassified institutions, optionally filtered by country code."""
-    try: get_venue(venue); countries={c.upper() for c in country} or None; result=audit_other_institutions(venue.lower(),from_year=from_year,to_year=to_year,countries=countries,cache_root=cache_dir)
-    except (ValueError,RuntimeError) as exc: typer.echo(f"Error: {exc}",err=True); raise typer.Exit(code=1) from None
-    typer.echo(f"Unclassified institutions: {result.institutions}"); typer.echo(f"Audit: {result.path}")
+    try:
+        get_venue(venue)
+        countries = {item.upper() for item in country} or None
+        result = audit_other_institutions(
+            venue.lower(),
+            from_year=from_year,
+            to_year=to_year,
+            countries=countries,
+            cache_root=cache_dir,
+        )
+    except (ValueError, RuntimeError) as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(code=1) from None
+    typer.echo(f"Unclassified institutions: {result.institutions}")
+    typer.echo(f"Audit: {result.path}")
+
+
 @app.command("list-venues")
-def list_venues()->None:
-    for key,venue in sorted(VENUES.items()): typer.echo(f"{key:10s} {venue.display_name}")
-if __name__=="__main__": app()
+def list_venues() -> None:
+    for key, venue in sorted(VENUES.items()):
+        typer.echo(f"{key:10s} {venue.display_name}")
+
+
+if __name__ == "__main__":
+    app()

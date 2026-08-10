@@ -87,6 +87,7 @@ cache/ipdps/analysis/universities-2016-2025.csv
 cache/ipdps/analysis/lab-university-pairs-2016-2025.csv
 cache/ipdps/analysis/public-research-subtypes-yearly-2016-2025.csv
 cache/ipdps/analysis/public-research-country-subtypes-2016-2025.csv
+cache/ipdps/analysis/public-research-subtype-combinations-2016-2025.csv
 ```
 
 `labs-*.csv` and `lab-university-pairs-*.csv` include a `subtype` column. Current subtypes are:
@@ -96,7 +97,9 @@ cache/ipdps/analysis/public-research-country-subtypes-2016-2025.csv
 - `government_research_institute`
 - `public_research_institute`
 
-The subtype reports count papers, not raw affiliations. If a paper includes multiple institutions of the same subtype or the same country/subtype combination, that paper contributes only once to that aggregate.
+The yearly and country subtype reports use overlapping participation counts. A paper with multiple public-research subtypes contributes once to every subtype represented, while duplicate institutions of the same subtype or country/subtype combination still count only once.
+
+The subtype-combination report is exclusive. Every public-research paper belongs to exactly one sorted subtype combination. Therefore, the sum of its `papers` column equals the unique public-research paper count, and the sum for rows where `subtype_count > 1` equals the multi-subtype paper count. The report command validates both invariants before writing any CSV output.
 
 ## Audit unclassified institutions
 
