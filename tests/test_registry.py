@@ -20,6 +20,34 @@ from hpc_bibliometrics.analyze import RESEARCH_LABS, _classify
         ({"id": "I4210135837"}, "NCSA", "national_compute_center"),
         ({"ror": "03ztgj037"}, "DKRZ", "national_compute_center"),
         ({"display_name": "NSF National Center for Atmospheric Research"}, "NCAR", "government_research_institute"),
+        ({"id": "I4210109712"}, "MPI-INF", "public_research_institute"),
+        ({"ror": "04d23a975"}, "US-NRL", "government_research_institute"),
+        (
+            {"display_name": "Shanghai Artificial Intelligence Laboratory"},
+            "SHLAB",
+            "public_research_institute",
+        ),
+        ({"id": "I67311998"}, "CERN", "public_research_institute"),
+        ({"ror": "04nytyj38"}, "CAS-SIMIT", "public_research_institute"),
+        (
+            {"display_name": "Beijing Institute of Big Data Research"},
+            "BIBDR",
+            "public_research_institute",
+        ),
+        ({"id": "I4210127509"}, "VECTOR", "public_research_institute"),
+        ({"ror": "04mqy3p58"}, "INESC-ID", "public_research_institute"),
+        (
+            {"display_name": "Advanced Digital Sciences Centre"},
+            "ADSC",
+            "public_research_institute",
+        ),
+        ({"id": "I1309980932"}, "ORNL", "national_lab"),
+        ({"ror": "02pq9w205"}, "CAS-ICT", "public_research_institute"),
+        (
+            {"display_name": "State Key Laboratory of Computer Science"},
+            "CAS-ISCAS",
+            "public_research_institute",
+        ),
     ],
 )
 def test_audited_registry_entries(

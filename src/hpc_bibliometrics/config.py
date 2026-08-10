@@ -13,6 +13,12 @@ class VenueSpec:
 
 
 VENUES: dict[str, VenueSpec] = {
+    "ics": VenueSpec(
+        key="ics",
+        display_name="ACM International Conference on Supercomputing",
+        # Main proceedings only. Co-located workshops use separate DBLP pages/keys.
+        dblp_toc_pattern="db/conf/ics/ics{year}.html",
+    ),
     "ipdps": VenueSpec(
         key="ipdps",
         display_name="IEEE International Parallel and Distributed Processing Symposium",

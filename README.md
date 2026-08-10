@@ -6,7 +6,7 @@ The pipeline builds an exact main-conference paper roster from DBLP, enriches th
 
 ## Current scope
 
-- IPDPS and SC main conferences, 2016-2025
+- IPDPS, SC, and ICS main conferences, 2016-2025
 - Exact main-conference roster from DBLP TOC pages
 - Parallel collection with resumable local caches
 - DOI-based OpenAlex enrichment
@@ -37,17 +37,22 @@ The key is passed only to OpenAlex and is not written to the cache.
 
 ## End-to-end workflow
 
-Use `ipdps` or `sc` as the venue argument. For SC, the DBLP roster uses the main
+Use `ipdps`, `sc`, or `ics` as the venue argument. For SC, the DBLP roster uses the main
 proceedings pages and excludes the separately indexed workshop proceedings.
 SC 2018 is a documented publisher-link exception: DBLP exposes legacy ACM links
 rather than DOI links, so the collector recovers the IEEE DOI from the proceeding's
 article pagination before OpenAlex enrichment.
+
+ICS uses the ACM International Conference on Supercomputing main-proceedings TOCs
+under DBLP's `conf/ics` series. It is distinct from ISC High Performance, which DBLP
+indexes under `conf/supercomputer`.
 
 ### 1. Collect the DBLP roster
 
 ```bash
 hpc-bib collect ipdps --from 2016 --to 2025 --workers 4
 # SC: hpc-bib collect sc --from 2016 --to 2025 --workers 4
+# ICS: hpc-bib collect ics --from 2016 --to 2025 --workers 4
 ```
 
 Use `--refresh` to rebuild cached yearly rosters.
@@ -57,6 +62,7 @@ Use `--refresh` to rebuild cached yearly rosters.
 ```bash
 hpc-bib enrich ipdps --from 2016 --to 2025 --workers 4
 # SC: hpc-bib enrich sc --from 2016 --to 2025 --workers 4
+# ICS: hpc-bib enrich ics --from 2016 --to 2025 --workers 4
 ```
 
 This matches the DBLP roster to OpenAlex and writes:
@@ -114,23 +120,24 @@ The subtype-combination report is exclusive. Every public-research paper belongs
 These snapshots use the same global registry for every venue. Adding a conservatively
 verified institution can therefore update earlier venue totals as well as the new venue.
 
-| Metric | IPDPS | SC |
-| --- | ---: | ---: |
-| DBLP main-conference papers | 1,097 | 994 |
-| OpenAlex matched papers | 1,096 | 991 |
-| Public research institution papers | 344 | 445 |
-| Public research institution + university papers | 276 | 352 |
-| Public research institutions | 50 | 52 |
-| Universities | 461 | 387 |
-| Institution-university pairs | 378 | 631 |
-| Multi-subtype papers | 15 | 40 |
-| US `national_lab` papers | 223 | 307 |
-| US `national_lab` + university papers | 171 | 232 |
+| Metric | IPDPS | SC | ICS |
+| --- | ---: | ---: | ---: |
+| DBLP main-conference papers | 1,097 | 994 | 440 |
+| OpenAlex matched papers | 1,096 | 991 | 440 |
+| Public research institution papers | 353 | 449 | 127 |
+| Public research institution + university papers | 283 | 356 | 117 |
+| Public research institutions | 53 | 57 | 31 |
+| Universities | 461 | 387 | 265 |
+| Institution-university pairs | 391 | 648 | 193 |
+| Multi-subtype papers | 16 | 41 | 9 |
+| US `national_lab` papers | 223 | 307 | 79 |
+| US `national_lab` + university papers | 171 | 232 | 72 |
 
-For both venues, the exclusive subtype-combination `papers` sum equals the unique
-public-research paper count. SC has three DOI-bearing papers that OpenAlex does not
-currently match (two from 2021 and one from 2023); they remain in the DBLP roster with
-an explicit `unmatched` status.
+For all three venues, the exclusive subtype-combination `papers` sum equals the unique
+public-research paper count. ICS has complete DOI coverage and all 440 papers currently
+match OpenAlex. SC has three DOI-bearing papers that OpenAlex does not currently match
+(two from 2021 and one from 2023); they remain in the DBLP roster with an explicit
+`unmatched` status.
 
 ## Audit unclassified institutions
 

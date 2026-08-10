@@ -57,6 +57,19 @@ def test_sc_uses_main_proceedings_page() -> None:
     assert rows[0]["dblp_url"] == "https://dblp.org/db/conf/sc/sc2024.html"
 
 
+def test_ics_uses_main_proceedings_page() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.path == "/db/conf/ics/ics2024.html"
+        return httpx.Response(200, text=HTML.replace("conf/ipps", "conf/ics"))
+
+    with DblpClient(transport=httpx.MockTransport(handler)) as client:
+        rows = list(client.iter_proceedings(get_venue("ics"), 2024))
+
+    assert len(rows) == 1
+    assert rows[0]["dblp_key"] == "conf/ics/Example24"
+    assert rows[0]["dblp_url"] == "https://dblp.org/db/conf/ics/ics2024.html"
+
+
 def test_sc_2018_recovers_ieee_doi_from_article_pagination() -> None:
     html = HTML.replace("conf/ipps", "conf/sc").replace(
         '<a href="https://doi.org/10.1109/IPDPS.2024.123">DOI</a>',

@@ -23,6 +23,82 @@ RESEARCH_LABS.update({
     "NCSA": {"country": "US", "subtype": "national_compute_center", "openalex_ids": ("I4210135837",), "rors": ("03r10zj06",), "aliases": ("national center for supercomputing applications", "national centre for supercomputing applications")},
     "DKRZ": {"country": "DE", "subtype": "national_compute_center", "openalex_ids": ("I2800289517",), "rors": ("03ztgj037",), "aliases": ("german climate computing centre", "german climate computing center", "deutsches klimarechenzentrum")},
     "NCAR": {"country": "US", "subtype": "government_research_institute", "openalex_ids": ("I107766831",), "rors": ("05cvfcr44",), "aliases": ("nsf national center for atmospheric research", "national center for atmospheric research", "national centre for atmospheric research")},
+    "MPI-INF": {
+        "country": "DE",
+        "subtype": "public_research_institute",
+        "openalex_ids": ("I4210109712",),
+        "rors": ("01w19ak89",),
+        "aliases": ("max planck institute for informatics",),
+    },
+    "US-NRL": {
+        "country": "US",
+        "subtype": "government_research_institute",
+        "openalex_ids": ("I1288214837",),
+        "rors": ("04d23a975",),
+        "aliases": (
+            "united states naval research laboratory",
+            "u.s. naval research laboratory",
+        ),
+    },
+    "SHLAB": {
+        "country": "CN",
+        "subtype": "public_research_institute",
+        "openalex_ids": ("I4391012619",),
+        "rors": ("03wkvpx79",),
+        "aliases": (
+            "shanghai artificial intelligence laboratory",
+            "shanghai ai laboratory",
+        ),
+    },
+    "CERN": {
+        "country": "CH",
+        "subtype": "public_research_institute",
+        "openalex_ids": ("I67311998",),
+        "rors": ("01ggx4157",),
+        "aliases": ("european organization for nuclear research",),
+    },
+    "CAS-SIMIT": {
+        "country": "CN",
+        "subtype": "public_research_institute",
+        "openalex_ids": ("I4210147322",),
+        "rors": ("04nytyj38",),
+        "aliases": ("shanghai institute of microsystem and information technology",),
+    },
+    "BIBDR": {
+        "country": "CN",
+        "subtype": "public_research_institute",
+        "openalex_ids": ("I4210096250",),
+        "rors": ("00s1sz824",),
+        "aliases": ("beijing institute of big data research",),
+    },
+    "VECTOR": {
+        "country": "CA",
+        "subtype": "public_research_institute",
+        "openalex_ids": ("I4210127509",),
+        "rors": ("03kqdja62",),
+        "aliases": ("vector institute",),
+    },
+    "INESC-ID": {
+        "country": "PT",
+        "subtype": "public_research_institute",
+        "openalex_ids": ("I121345201",),
+        "rors": ("04mqy3p58",),
+        "aliases": (
+            "instituto de engenharia de sistemas e computadores investigação e desenvolvimento",
+            "instituto de engenharia de sistemas e computadores investigacao e desenvolvimento",
+            "inesc-id",
+        ),
+    },
+    "ADSC": {
+        "country": "SG",
+        "subtype": "public_research_institute",
+        "openalex_ids": ("I4210108443",),
+        "rors": ("01xaqx887",),
+        "aliases": (
+            "advanced digital sciences center",
+            "advanced digital sciences centre",
+        ),
+    },
 })
 
 # Identifier/name updates for existing entries discovered in the SC audit.
@@ -35,6 +111,24 @@ RESEARCH_LABS["NSCC-TJ"].update({
     "openalex_ids": ("I4210165734",),
     "rors": ("05tngxm14",),
     "aliases": RESEARCH_LABS["NSCC-TJ"]["aliases"] + ("national supercomputing center of tianjin",),
+})
+RESEARCH_LABS["ORNL"].update({
+    "openalex_ids": ("I1289243028", "I1309980932"),
+    "rors": ("01qz5mb56", "011fc0n53"),
+    "aliases": RESEARCH_LABS["ORNL"]["aliases"]
+    + ("national transportation research center",),
+})
+RESEARCH_LABS["CAS-ICT"].update({
+    "openalex_ids": RESEARCH_LABS["CAS-ICT"]["openalex_ids"] + ("I4391767888",),
+    "rors": RESEARCH_LABS["CAS-ICT"]["rors"] + ("02pq9w205",),
+    "aliases": RESEARCH_LABS["CAS-ICT"]["aliases"]
+    + ("state key laboratory of computer architecture",),
+})
+RESEARCH_LABS["CAS-ISCAS"].update({
+    "openalex_ids": RESEARCH_LABS["CAS-ISCAS"]["openalex_ids"] + ("I4391767820",),
+    "rors": RESEARCH_LABS["CAS-ISCAS"]["rors"] + ("01hsx4r68",),
+    "aliases": RESEARCH_LABS["CAS-ISCAS"]["aliases"]
+    + ("state key laboratory of computer science",),
 })
 
 # Backward-compatible metadata layer. The existing `national_lab` category remains
