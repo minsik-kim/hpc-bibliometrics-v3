@@ -48,6 +48,19 @@ from hpc_bibliometrics.analyze import RESEARCH_LABS, _classify
             "CAS-ISCAS",
             "public_research_institute",
         ),
+        ({"id": "I4210101455"}, "CEA-DIF", "government_research_institute"),
+        ({"ror": "00myn0z94"}, "IRISA", "public_research_institute"),
+        ({"display_name": "LIP6"}, "LIP6", "public_research_institute"),
+        ({"id": "I42894916"}, "DATA61", "government_research_institute"),
+        ({"ror": "03ajsaw82"}, "NASK", "government_research_institute"),
+        ({"id": "I166416128"}, "DEVCOM-ARL", "government_research_institute"),
+        ({"display_name": "Air Force Research Laboratory"}, "AFRL", "government_research_institute"),
+        ({"ror": "05fa8ka61"}, "INESC-TEC", "public_research_institute"),
+        ({"id": "I3004594783"}, "A-STAR-IHPC", "government_research_institute"),
+        ({"ror": "04dcc3438"}, "CC-IN2P3", "national_compute_center"),
+        ({"id": "I4210112812"}, "NSCC-SZ", "national_compute_center"),
+        ({"display_name": "San Diego Supercomputer Center"}, "SDSC", "national_compute_center"),
+        ({"ror": "02pe2kf23"}, "MPI-SWS", "public_research_institute"),
     ],
 )
 def test_audited_registry_entries(
@@ -57,3 +70,34 @@ def test_audited_registry_entries(
     assert category == "national_lab"
     assert code == expected_code
     assert RESEARCH_LABS[code]["subtype"] == expected_subtype
+
+
+@pytest.mark.parametrize(
+    "institution",
+    [
+        {
+            "id": "I1294671590",
+            "display_name": "Centre National de la Recherche Scientifique",
+            "type": "government",
+        },
+        {
+            "id": "I19820366",
+            "display_name": "Chinese Academy of Sciences",
+            "type": "government",
+        },
+        {
+            "id": "I1292875679",
+            "display_name": "Commonwealth Scientific and Industrial Research Organisation",
+            "type": "government",
+        },
+        {
+            "id": "I115228651",
+            "display_name": "Agency for Science, Technology and Research",
+            "type": "government",
+        },
+    ],
+)
+def test_umbrella_organizations_remain_unclassified(
+    institution: dict[str, str]
+) -> None:
+    assert _classify(institution) == ("other", None)

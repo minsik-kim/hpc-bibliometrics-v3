@@ -6,7 +6,10 @@ The pipeline builds an exact main-conference paper roster from DBLP, enriches th
 
 ## Current scope
 
-- IPDPS, SC, and ICS main conferences, 2016-2025
+- IPDPS, SC, ICS, PPoPP, HPDC, ISC, CLUSTER, ICPP, Euro-Par, and HiPC
+  main conferences, 2016-2025
+- CCGrid main conference, 2016-2024 (DBLP does not yet list a 2025 proceedings
+  roster as of 2026-08-11)
 - Exact main-conference roster from DBLP TOC pages
 - Parallel collection with resumable local caches
 - DOI-based OpenAlex enrichment
@@ -14,7 +17,7 @@ The pipeline builds an exact main-conference paper roster from DBLP, enriches th
 - Paper-level deduplication for institution, subtype, country, and collaboration statistics
 - Auditing of still-unclassified institutions by country
 
-The public research institution registry currently spans organizations in the United States, China, Japan, Korea, Germany, France, the United Kingdom, the Netherlands, Australia, Spain, Taiwan, Switzerland, Italy, and Norway. Broad parent organizations such as CAS and CNRS are intentionally not classified wholesale when that would overstate institution-level participation.
+The public research institution registry currently spans organizations in the United States, China, Japan, Korea, Germany, France, the United Kingdom, the Netherlands, Australia, Spain, Taiwan, Switzerland, Italy, Norway, Poland, Portugal, Greece, Singapore, and Costa Rica. Broad parent organizations such as CAS, CNRS, CSIRO, and A*STAR are intentionally not classified wholesale when that would overstate institution-level participation. Their specifically audited institutes and centers can still be registered.
 
 ## Install on macOS
 
@@ -37,8 +40,9 @@ The key is passed only to OpenAlex and is not written to the cache.
 
 ## End-to-end workflow
 
-Use `ipdps`, `sc`, or `ics` as the venue argument. For SC, the DBLP roster uses the main
-proceedings pages and excludes the separately indexed workshop proceedings.
+Use any key printed by `hpc-bib list-venues` as the venue argument. For SC, CLUSTER,
+and CCGrid, the DBLP roster uses the main proceedings pages and excludes the
+separately indexed workshop proceedings.
 SC 2018 is a documented publisher-link exception: DBLP exposes legacy ACM links
 rather than DOI links, so the collector recovers the IEEE DOI from the proceeding's
 article pagination before OpenAlex enrichment.
@@ -47,12 +51,17 @@ ICS uses the ACM International Conference on Supercomputing main-proceedings TOC
 under DBLP's `conf/ics` series. It is distinct from ISC High Performance, which DBLP
 indexes under `conf/supercomputer`.
 
+Euro-Par 2024 and 2025 each have three DBLP main-proceedings volumes. The collector
+requires all three, combines them, and deduplicates by DBLP publication key. CCGrid
+2025 is not substituted from another source: until DBLP publishes its roster, use
+`--to 2024` for CCGrid.
+
 ### 1. Collect the DBLP roster
 
 ```bash
 hpc-bib collect ipdps --from 2016 --to 2025 --workers 4
-# SC: hpc-bib collect sc --from 2016 --to 2025 --workers 4
-# ICS: hpc-bib collect ics --from 2016 --to 2025 --workers 4
+# Replace ipdps with another venue key.
+# CCGrid currently uses: hpc-bib collect ccgrid --from 2016 --to 2024 --workers 4
 ```
 
 Use `--refresh` to rebuild cached yearly rosters.
@@ -61,8 +70,7 @@ Use `--refresh` to rebuild cached yearly rosters.
 
 ```bash
 hpc-bib enrich ipdps --from 2016 --to 2025 --workers 4
-# SC: hpc-bib enrich sc --from 2016 --to 2025 --workers 4
-# ICS: hpc-bib enrich ics --from 2016 --to 2025 --workers 4
+# CCGrid currently uses: hpc-bib enrich ccgrid --from 2016 --to 2024 --workers 4
 ```
 
 This matches the DBLP roster to OpenAlex and writes:
@@ -115,29 +123,44 @@ The yearly and country subtype reports use overlapping participation counts. A p
 
 The subtype-combination report is exclusive. Every public-research paper belongs to exactly one sorted subtype combination. Therefore, the sum of its `papers` column equals the unique public-research paper count, and the sum for rows where `subtype_count > 1` equals the multi-subtype paper count. The report command validates both invariants before writing any CSV output.
 
-## Validated 2016-2025 snapshots
+## Validated snapshots
 
 These snapshots use the same global registry for every venue. Adding a conservatively
 verified institution can therefore update earlier venue totals as well as the new venue.
 
-| Metric | IPDPS | SC | ICS |
-| --- | ---: | ---: | ---: |
-| DBLP main-conference papers | 1,097 | 994 | 440 |
-| OpenAlex matched papers | 1,096 | 991 | 440 |
-| Public research institution papers | 353 | 449 | 127 |
-| Public research institution + university papers | 283 | 356 | 117 |
-| Public research institutions | 53 | 57 | 31 |
-| Universities | 461 | 387 | 265 |
-| Institution-university pairs | 391 | 648 | 193 |
-| Multi-subtype papers | 16 | 41 | 9 |
-| US `national_lab` papers | 223 | 307 | 79 |
-| US `national_lab` + university papers | 171 | 232 | 72 |
+All columns below cover 2016-2025 except CCGrid, which covers 2016-2024.
 
-For all three venues, the exclusive subtype-combination `papers` sum equals the unique
-public-research paper count. ICS has complete DOI coverage and all 440 papers currently
-match OpenAlex. SC has three DOI-bearing papers that OpenAlex does not currently match
-(two from 2021 and one from 2023); they remain in the DBLP roster with an explicit
-`unmatched` status.
+| Metric | IPDPS | SC | ICS | PPoPP | HPDC |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| DBLP main-conference papers | 1,097 | 994 | 440 | 490 | 333 |
+| OpenAlex matched papers | 1,096 | 991 | 440 | 490 | 332 |
+| Public research institution papers | 370 | 451 | 127 | 100 | 128 |
+| Public research institution + university papers | 298 | 358 | 117 | 91 | 105 |
+| Public research institutions | 65 | 65 | 31 | 30 | 28 |
+| Universities | 461 | 387 | 265 | 239 | 189 |
+| Institution-university pairs | 447 | 675 | 193 | 150 | 139 |
+| Multi-subtype papers | 32 | 50 | 9 | 8 | 6 |
+| US `national_lab` papers | 223 | 307 | 79 | 49 | 95 |
+| US `national_lab` + university papers | 171 | 232 | 72 | 45 | 79 |
+
+| Metric | ISC | CLUSTER | CCGrid | ICPP | Euro-Par | HiPC |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| DBLP main-conference papers | 226 | 686 | 850 | 864 | 511 | 397 |
+| OpenAlex matched papers | 226 | 686 | 849 | 864 | 511 | 397 |
+| Public research institution papers | 95 | 303 | 209 | 235 | 167 | 105 |
+| Public research institution + university papers | 69 | 222 | 179 | 199 | 148 | 88 |
+| Public research institutions | 32 | 63 | 57 | 45 | 53 | 36 |
+| Universities | 129 | 339 | 501 | 401 | 331 | 234 |
+| Institution-university pairs | 105 | 381 | 292 | 314 | 289 | 156 |
+| Multi-subtype papers | 8 | 38 | 25 | 22 | 43 | 12 |
+| US `national_lab` papers | 62 | 171 | 79 | 88 | 35 | 67 |
+| US `national_lab` + university papers | 42 | 120 | 68 | 66 | 31 | 53 |
+
+For every venue, the exclusive subtype-combination `papers` sum equals the unique
+public-research paper count, and its multi-subtype rows equal the independently
+reconstructed multi-subtype count. Every DBLP paper has a DOI. OpenAlex currently
+does not match one HPDC paper, one CCGrid paper, one IPDPS paper, and three SC papers;
+they remain in the exact DBLP roster with an explicit `unmatched` status.
 
 ## Audit unclassified institutions
 

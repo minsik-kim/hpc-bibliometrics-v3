@@ -41,6 +41,19 @@ def _sc_2018_doi(entry: Any, venue: VenueSpec, year: int) -> str | None:
     return f"10.1109/sc.2018.{article + 3:05d}"
 
 
+def _publisher_doi(entry: Any, key: str, venue: VenueSpec, year: int) -> str | None:
+    """Recover DOI values from documented publisher-link exceptions."""
+    if venue.key == "isc" and year == 2025:
+        link = entry.select_one('a[href*="ieeexplore.ieee.org/document/"]')
+        href = str(link.get("href") or "") if link is not None else ""
+        match = re.search(r"/document/(\d+)", href)
+        if match is not None:
+            return f"10.23919/isc.2025.{match.group(1)}"
+    if key == "conf/ccgrid/LiuA17":
+        return "10.1109/ccgrid.2017.95"
+    return None
+
+
 class DblpClient:
     def __init__(
         self,
@@ -94,41 +107,65 @@ class DblpClient:
         raise DblpError(f"DBLP request failed for {path}") from None
 
     def iter_proceedings(self, venue: VenueSpec, year: int) -> Iterator[dict[str, Any]]:
-        path = venue.dblp_toc_pattern.format(year=year)
-        soup = BeautifulSoup(self._get_text(path), "html.parser")
         found = 0
+        seen_keys: set[str] = set()
+        paths = venue.dblp_toc_paths(year)
 
-        for entry in soup.select("li.entry.inproceedings"):
-            key = entry.get("data-key") or entry.get("id")
-            title_node = entry.select_one("span.title")
-            if not key or title_node is None:
-                continue
+        for path in paths:
+            soup = BeautifulSoup(self._get_text(path), "html.parser")
+            page_found = 0
 
-            authors = []
-            for author_node in entry.select('[itemprop="author"]'):
-                name_node = author_node.select_one('[itemprop="name"]')
-                name = (name_node or author_node).get_text(" ", strip=True)
-                if name and name not in authors:
-                    authors.append(html.unescape(name))
-            if not authors:
-                continue
+            for entry in soup.select("li.entry.inproceedings"):
+                key = entry.get("data-key") or entry.get("id")
+                title_node = entry.select_one("span.title")
+                if not key or title_node is None:
+                    continue
+                page_found += 1
+                normalized_key = html.unescape(str(key))
+                if normalized_key in seen_keys:
+                    continue
 
-            doi = None
-            doi_link = entry.select_one('a[href^="https://doi.org/"], a[href^="http://doi.org/"]')
-            if doi_link is not None:
-                doi = _strip_doi(str(doi_link.get("href") or ""))
-            if doi is None:
-                doi = _sc_2018_doi(entry, venue, year)
+                authors = []
+                for author_node in entry.select('[itemprop="author"]'):
+                    name_node = author_node.select_one('[itemprop="name"]')
+                    name = (name_node or author_node).get_text(" ", strip=True)
+                    if name and name not in authors:
+                        authors.append(html.unescape(name))
+                if not authors:
+                    continue
 
-            found += 1
-            yield {
-                "dblp_key": html.unescape(str(key)),
-                "doi": doi,
-                "title": html.unescape(title_node.get_text(" ", strip=True)).rstrip("."),
-                "publication_year": year,
-                "authors": authors,
-                "dblp_url": f"https://dblp.org/{path}",
-            }
+                doi = None
+                doi_link = entry.select_one(
+                    'a[href^="https://doi.org/"], a[href^="http://doi.org/"]'
+                )
+                if doi_link is not None:
+                    doi = _strip_doi(str(doi_link.get("href") or ""))
+                if doi is None:
+                    doi = _sc_2018_doi(entry, venue, year)
+                if doi is None:
+                    doi = _publisher_doi(entry, normalized_key, venue, year)
+
+                found += 1
+                seen_keys.add(normalized_key)
+                yield {
+                    "dblp_key": normalized_key,
+                    "doi": doi,
+                    "title": html.unescape(title_node.get_text(" ", strip=True)).rstrip("."),
+                    "publication_year": year,
+                    "authors": authors,
+                    "dblp_url": f"https://dblp.org/{path}",
+                }
+
+            if page_found == 0:
+                if len(paths) == 1:
+                    raise DblpError(
+                        f"DBLP returned no main-conference papers for "
+                        f"{venue.key.upper()} {year}; refusing to cache an empty roster."
+                    )
+                raise DblpError(
+                    f"DBLP returned no main-conference papers for {venue.key.upper()} "
+                    f"{year} at {path}; refusing to cache an incomplete roster."
+                )
 
         if found == 0:
             raise DblpError(

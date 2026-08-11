@@ -9,6 +9,7 @@ from typing import Any
 
 from .cache import (
     CACHE_FORMAT_VERSION,
+    is_current_paper_cache,
     load_json,
     parquet_row_count,
     update_manifest,
@@ -100,18 +101,30 @@ def collect_venue(
         "provider": "DBLP",
         "display_name": venue.display_name,
         "toc_pattern": venue.dblp_toc_pattern,
+        "toc_overrides": venue.dblp_toc_overrides,
     }
     try:
         old_manifest = load_json(cache_root / venue.key / "manifest.json", {})
         cache_compatible = _manifest_format_version(old_manifest) >= CACHE_FORMAT_VERSION
-        effective_refresh = refresh or not cache_compatible
-        old_counts = old_manifest.get("years", {}) if cache_compatible and isinstance(old_manifest, dict) else {}
+        if cache_compatible and isinstance(old_manifest, dict):
+            old_counts = old_manifest.get("years", {})
+        else:
+            old_counts = {}
+        for year in range(from_year, to_year + 1):
+            if str(year) in old_counts:
+                continue
+            path = year_cache_path(cache_root, venue.key, year)
+            if is_current_paper_cache(path):
+                old_counts[str(year)] = parquet_row_count(path)
 
         futures = {}
         results: list[YearResult] = []
         with ThreadPoolExecutor(max_workers=min(workers, to_year - from_year + 1)) as executor:
             for year in range(from_year, to_year + 1):
-                future = executor.submit(_collect_year, api, venue, year, cache_root, effective_refresh)
+                year_refresh = refresh or str(year) not in old_counts
+                future = executor.submit(
+                    _collect_year, api, venue, year, cache_root, year_refresh
+                )
                 futures[future] = year
 
             for future in as_completed(futures):

@@ -73,6 +73,17 @@ def parquet_row_count(path: Path) -> int:
     return int(pl.scan_parquet(path).select(pl.len()).collect().item())
 
 
+def is_current_paper_cache(path: Path) -> bool:
+    """Return whether a partial cache is a non-empty DBLP roster in v3 schema."""
+    import polars as pl
+
+    try:
+        schema = pl.scan_parquet(path).collect_schema()
+        return tuple(schema.names()) == PAPER_COLUMNS and parquet_row_count(path) > 0
+    except (OSError, pl.exceptions.PolarsError):
+        return False
+
+
 def update_manifest(
     cache_root: Path,
     venue_key: str,

@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from hpc_bibliometrics.cache import CACHE_FORMAT_VERSION
+from hpc_bibliometrics.cache import CACHE_FORMAT_VERSION, write_parquet_atomic
 from hpc_bibliometrics.collector import collect_venue
 from hpc_bibliometrics.config import get_venue
 
@@ -68,3 +68,45 @@ def test_collect_venue_rebuilds_old_openalex_cache(monkeypatch, tmp_path: Path) 
     assert client.years == [2024]
     assert manifest["format_version"] == CACHE_FORMAT_VERSION
     assert manifest["years"]["2024"] == 1
+
+
+def test_collect_venue_recovers_partial_current_cache_without_manifest(
+    monkeypatch, tmp_path: Path
+) -> None:
+    cached_path = tmp_path / "ipdps" / "2023.parquet"
+    write_parquet_atomic(
+        [
+            {
+                "dblp_key": "conf/ipps/Cached23",
+                "doi": "10.1109/ipdps.2023.1",
+                "title": "Cached paper",
+                "publication_year": 2023,
+                "authors_json": '["A. Author"]',
+                "dblp_url": "https://dblp.org/db/conf/ipps/ipdps2023.html",
+            }
+        ],
+        cached_path,
+    )
+    written: list[Path] = []
+
+    def fake_write(rows, path: Path) -> int:
+        materialized = list(rows)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("new", encoding="utf-8")
+        written.append(path)
+        return len(materialized)
+
+    monkeypatch.setattr("hpc_bibliometrics.collector.write_parquet_atomic", fake_write)
+    client = FakeClient()
+    result = collect_venue(
+        get_venue("ipdps"),
+        from_year=2023,
+        to_year=2024,
+        cache_root=tmp_path,
+        workers=1,
+        client=client,
+    )
+
+    assert result.total_count == 2
+    assert client.years == [2024]
+    assert written == [tmp_path / "ipdps" / "2024.parquet"]

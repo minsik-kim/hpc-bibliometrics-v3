@@ -70,6 +70,34 @@ def test_ics_uses_main_proceedings_page() -> None:
     assert rows[0]["dblp_url"] == "https://dblp.org/db/conf/ics/ics2024.html"
 
 
+def test_europar_combines_and_deduplicates_main_proceedings_volumes() -> None:
+    html = HTML.replace("conf/ipps", "conf/europar")
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.path in {
+            f"/db/conf/europar/europar2024-{part}.html" for part in range(1, 4)
+        }
+        return httpx.Response(200, text=html)
+
+    with DblpClient(transport=httpx.MockTransport(handler)) as client:
+        rows = list(client.iter_proceedings(get_venue("europar"), 2024))
+
+    assert len(rows) == 1
+    assert rows[0]["dblp_key"] == "conf/europar/Example24"
+
+
+def test_europar_rejects_an_empty_configured_volume() -> None:
+    html = HTML.replace("conf/ipps", "conf/europar")
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        text = "<html></html>" if request.url.path.endswith("-2.html") else html
+        return httpx.Response(200, text=text)
+
+    with DblpClient(transport=httpx.MockTransport(handler)) as client:
+        with pytest.raises(DblpError, match="incomplete roster"):
+            list(client.iter_proceedings(get_venue("europar"), 2024))
+
+
 def test_sc_2018_recovers_ieee_doi_from_article_pagination() -> None:
     html = HTML.replace("conf/ipps", "conf/sc").replace(
         '<a href="https://doi.org/10.1109/IPDPS.2024.123">DOI</a>',
@@ -83,3 +111,29 @@ def test_sc_2018_recovers_ieee_doi_from_article_pagination() -> None:
         rows = list(client.iter_proceedings(get_venue("sc"), 2018))
 
     assert rows[0]["doi"] == "10.1109/sc.2018.00005"
+
+
+def test_isc_2025_recovers_doi_from_ieee_document_link() -> None:
+    html = HTML.replace("conf/ipps", "conf/supercomputer").replace(
+        '<a href="https://doi.org/10.1109/IPDPS.2024.123">DOI</a>',
+        '<a href="https://ieeexplore.ieee.org/document/11017506">IEEE</a>',
+    )
+    with DblpClient(
+        transport=httpx.MockTransport(lambda request: httpx.Response(200, text=html))
+    ) as client:
+        rows = list(client.iter_proceedings(get_venue("isc"), 2025))
+
+    assert rows[0]["doi"] == "10.23919/isc.2025.11017506"
+
+
+def test_ccgrid_2017_recovers_known_missing_doi() -> None:
+    html = HTML.replace("conf/ipps/Example24", "conf/ccgrid/LiuA17").replace(
+        '<a href="https://doi.org/10.1109/IPDPS.2024.123">DOI</a>',
+        "",
+    )
+    with DblpClient(
+        transport=httpx.MockTransport(lambda request: httpx.Response(200, text=html))
+    ) as client:
+        rows = list(client.iter_proceedings(get_venue("ccgrid"), 2017))
+
+    assert rows[0]["doi"] == "10.1109/ccgrid.2017.95"
