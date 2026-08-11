@@ -95,7 +95,8 @@ def enrich(
     typer.echo(f"Total: {result.total} papers")
     typer.echo(
         f"Matched: {result.matched}; missing DOI: {result.missing_doi}; "
-        f"unmatched: {result.unmatched}"
+        f"unmatched: {result.unmatched}; manually enriched: "
+        f"{result.manually_enriched}"
     )
     typer.echo(f"Enrichment: {result.path}")
 

@@ -79,6 +79,13 @@ This matches the DBLP roster to OpenAlex and writes:
 cache/ipdps/openalex-2016-2025.parquet
 ```
 
+For a small curated set of DOI-bearing papers that OpenAlex returns as 404, the
+enrichment step adds publication-verified institution metadata from
+`manual_enrichment.py`. These rows retain `status=unmatched` and a null
+`openalex_id`; `metadata_source=manual`, the evidence URL, and the verification
+date make the fallback explicit. Existing caches receive these overrides without
+another OpenAlex request.
+
 ### 3. Analyze collaboration
 
 ```bash
@@ -134,14 +141,14 @@ All columns below cover 2016-2025 except CCGrid, which covers 2016-2024.
 | --- | ---: | ---: | ---: | ---: | ---: |
 | DBLP main-conference papers | 1,097 | 994 | 440 | 490 | 333 |
 | OpenAlex matched papers | 1,096 | 991 | 440 | 490 | 332 |
-| Public research institution papers | 370 | 451 | 127 | 100 | 128 |
-| Public research institution + university papers | 298 | 358 | 117 | 91 | 105 |
+| Public research institution papers | 370 | 454 | 127 | 100 | 128 |
+| Public research institution + university papers | 298 | 360 | 117 | 91 | 105 |
 | Public research institutions | 65 | 65 | 31 | 30 | 28 |
-| Universities | 461 | 387 | 265 | 239 | 189 |
-| Institution-university pairs | 447 | 675 | 193 | 150 | 139 |
+| Universities | 461 | 388 | 265 | 239 | 189 |
+| Institution-university pairs | 447 | 683 | 193 | 150 | 139 |
 | Multi-subtype papers | 32 | 50 | 9 | 8 | 6 |
-| US `national_lab` papers | 223 | 307 | 79 | 49 | 95 |
-| US `national_lab` + university papers | 171 | 232 | 72 | 45 | 79 |
+| US `national_lab` papers | 223 | 309 | 79 | 49 | 95 |
+| US `national_lab` + university papers | 171 | 233 | 72 | 45 | 79 |
 
 | Metric | ISC | CLUSTER | CCGrid | ICPP | Euro-Par | HiPC |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -159,8 +166,9 @@ All columns below cover 2016-2025 except CCGrid, which covers 2016-2024.
 For every venue, the exclusive subtype-combination `papers` sum equals the unique
 public-research paper count, and its multi-subtype rows equal the independently
 reconstructed multi-subtype count. Every DBLP paper has a DOI. OpenAlex currently
-does not match one HPDC paper, one CCGrid paper, one IPDPS paper, and three SC papers;
-they remain in the exact DBLP roster with an explicit `unmatched` status.
+does not match one HPDC paper, one CCGrid paper, one IPDPS paper, and three SC papers.
+All six retain an explicit `unmatched` status but have source-attributed manual
+institution metadata for analysis.
 
 ## Audit unclassified institutions
 
@@ -186,4 +194,5 @@ The umbrella analysis category remains backward-compatible as `national_lab` int
 python -m pytest
 ```
 
-Tests cover collection/cache behavior, OpenAlex handling, and paper-level deduplication in subtype and country/subtype reports.
+Tests cover collection/cache behavior, OpenAlex and manual fallback handling, and
+paper-level deduplication in subtype and country/subtype reports.
