@@ -123,6 +123,16 @@ def enrich_venue(
     roster = pl.concat([pl.read_parquet(path) for path in roster_paths], how="vertical")
     records = roster.to_dicts()
 
+    reusable: dict[str, dict[str, Any]] = {}
+    if not refresh:
+        for candidate in sorted((cache_root / venue).glob("openalex-*.parquet")):
+            if candidate == output:
+                continue
+            for cached_row in pl.read_parquet(candidate).to_dicts():
+                key = str(cached_row.get("dblp_key") or "")
+                if key:
+                    reusable[key] = cached_row
+
     def lookup(row: dict[str, Any]) -> dict[str, Any]:
         doi = _normalize_doi(row.get("doi"))
         base = {
@@ -154,12 +164,21 @@ def enrich_venue(
                 "metadata_verified_on": None}
 
     rows: list[dict[str, Any]] = []
+    to_fetch: list[dict[str, Any]] = []
+    for row in records:
+        cached_row = reusable.get(str(row.get("dblp_key") or ""))
+        if cached_row is not None and _normalize_doi(cached_row.get("doi")) == _normalize_doi(row.get("doi")):
+            rows.append(cached_row)
+        else:
+            to_fetch.append(row)
+
     with ThreadPoolExecutor(max_workers=workers) as executor:
-        futures = [executor.submit(lookup, row) for row in records]
+        futures = [executor.submit(lookup, row) for row in to_fetch]
         for future in as_completed(futures):
             rows.append(future.result())
 
-    result = pl.DataFrame(rows, strict=False).sort(["publication_year", "dblp_key"])
+    combined = pl.DataFrame(rows, strict=False, infer_schema_length=None).sort(["publication_year", "dblp_key"])
+    result, _ = _apply_manual_enrichments(combined)
     _write_enrichment(result, output)
     return EnrichResult(
         venue, result.height,
