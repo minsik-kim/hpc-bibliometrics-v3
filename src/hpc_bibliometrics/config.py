@@ -20,6 +20,43 @@ class VenueSpec:
 
 
 VENUES: dict[str, VenueSpec] = {
+    "asplos": VenueSpec(
+        key="asplos",
+        display_name=(
+            "ACM International Conference on Architectural Support for "
+            "Programming Languages and Operating Systems"
+        ),
+        # Main proceedings only. ASPLOS moved to a quarterly PACMPL-issue model;
+        # 2023 and 2024 each have 4 volumes, 2025 has 3 (its cycle closed once
+        # 2026-1 appeared). Every configured volume is required and deduplicated.
+        dblp_toc_pattern="db/conf/asplos/asplos{year}.html",
+        dblp_toc_overrides=(
+            (
+                2023,
+                tuple(f"db/conf/asplos/asplos{{year}}-{part}.html" for part in range(1, 5)),
+            ),
+            (
+                2024,
+                tuple(f"db/conf/asplos/asplos{{year}}-{part}.html" for part in range(1, 5)),
+            ),
+            (
+                2025,
+                tuple(f"db/conf/asplos/asplos{{year}}-{part}.html" for part in range(1, 4)),
+            ),
+        ),
+    ),
+    "cgo": VenueSpec(
+        key="cgo",
+        display_name=(
+            "IEEE/ACM International Symposium on Code Generation and Optimization"
+        ),
+        dblp_toc_pattern="db/conf/cgo/cgo{year}.html",
+    ),
+    "eurosys": VenueSpec(
+        key="eurosys",
+        display_name="European Conference on Computer Systems",
+        dblp_toc_pattern="db/conf/eurosys/eurosys{year}.html",
+    ),
     "ccgrid": VenueSpec(
         key="ccgrid",
         display_name=(

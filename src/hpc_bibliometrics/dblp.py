@@ -41,6 +41,16 @@ def _sc_2018_doi(entry: Any, venue: VenueSpec, year: int) -> str | None:
     return f"10.1109/sc.2018.{article + 3:05d}"
 
 
+def _cgo_2017_doi(index: int, venue: VenueSpec, year: int) -> str | None:
+    """Recover CGO 2017's IEEE DOI: DBLP links to a legacy ACM citation.cfm id, but
+    the IEEE DOIs are a contiguous run starting at 10.1109/cgo.2017.7863724 in the
+    same order DBLP lists the papers (verified against Crossref by title, including
+    the one entry Crossref itself mismatched)."""
+    if venue.key != "cgo" or year != 2017:
+        return None
+    return f"10.1109/cgo.2017.{7863724 + index}"
+
+
 def _publisher_doi(entry: Any, key: str, venue: VenueSpec, year: int) -> str | None:
     """Recover DOI values from documented publisher-link exceptions."""
     if venue.key == "isc" and year == 2025:
@@ -142,6 +152,8 @@ class DblpClient:
                     doi = _strip_doi(str(doi_link.get("href") or ""))
                 if doi is None:
                     doi = _sc_2018_doi(entry, venue, year)
+                if doi is None:
+                    doi = _cgo_2017_doi(page_found - 1, venue, year)
                 if doi is None:
                     doi = _publisher_doi(entry, normalized_key, venue, year)
 

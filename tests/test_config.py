@@ -33,10 +33,27 @@ def test_get_ics_venue_uses_main_proceedings_toc() -> None:
         ("icpp", "db/conf/icpp/icpp{year}.html"),
         ("isc", "db/conf/supercomputer/isc{year}.html"),
         ("ppopp", "db/conf/ppopp/ppopp{year}.html"),
+        ("cgo", "db/conf/cgo/cgo{year}.html"),
+        ("eurosys", "db/conf/eurosys/eurosys{year}.html"),
+        ("asplos", "db/conf/asplos/asplos{year}.html"),
     ],
 )
 def test_additional_venues_use_main_proceedings_toc(key: str, pattern: str) -> None:
     assert get_venue(key).dblp_toc_pattern == pattern
+
+
+def test_asplos_expands_quarterly_pacmpl_volumes() -> None:
+    venue = get_venue("asplos")
+    assert venue.dblp_toc_paths(2022) == ("db/conf/asplos/asplos2022.html",)
+    assert venue.dblp_toc_paths(2023) == tuple(
+        f"db/conf/asplos/asplos2023-{part}.html" for part in range(1, 5)
+    )
+    assert venue.dblp_toc_paths(2024) == tuple(
+        f"db/conf/asplos/asplos2024-{part}.html" for part in range(1, 5)
+    )
+    assert venue.dblp_toc_paths(2025) == tuple(
+        f"db/conf/asplos/asplos2025-{part}.html" for part in range(1, 4)
+    )
 
 
 def test_europar_expands_recent_main_proceedings_volumes() -> None:
@@ -51,5 +68,5 @@ def test_europar_expands_recent_main_proceedings_volumes() -> None:
 
 
 def test_get_venue_rejects_unknown_key() -> None:
-    with pytest.raises(ValueError, match="Available venues: ccgrid, cluster, europar"):
+    with pytest.raises(ValueError, match="Available venues: asplos, ccgrid, cgo, cluster"):
         get_venue("unknown")

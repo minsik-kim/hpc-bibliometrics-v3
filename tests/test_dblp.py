@@ -126,6 +126,29 @@ def test_isc_2025_recovers_doi_from_ieee_document_link() -> None:
     assert rows[0]["doi"] == "10.23919/isc.2025.11017506"
 
 
+def test_cgo_2017_recovers_ieee_doi_from_contiguous_sequence() -> None:
+    entry = (
+        '<li id="conf/cgo/Example{n}17" class="entry inproceedings toc" '
+        'data-key="conf/cgo/Example{n}17">'
+        '<cite class="data tts-content">'
+        '<span itemprop="author"><span itemprop="name">Ada Example</span></span>'
+        '<span class="title" itemprop="name">Paper {n}.</span>'
+        '<a href="http://dl.acm.org/citation.cfm?id=304983{n}">ACM</a>'
+        "</cite></li>"
+    )
+    html = f'<ul class="publ-list">{entry.format(n=4)}{entry.format(n=5)}</ul>'
+
+    with DblpClient(
+        transport=httpx.MockTransport(lambda request: httpx.Response(200, text=html))
+    ) as client:
+        rows = list(client.iter_proceedings(get_venue("cgo"), 2017))
+
+    assert [row["doi"] for row in rows] == [
+        "10.1109/cgo.2017.7863724",
+        "10.1109/cgo.2017.7863725",
+    ]
+
+
 def test_ccgrid_2017_recovers_known_missing_doi() -> None:
     html = HTML.replace("conf/ipps/Example24", "conf/ccgrid/LiuA17").replace(
         '<a href="https://doi.org/10.1109/IPDPS.2024.123">DOI</a>',

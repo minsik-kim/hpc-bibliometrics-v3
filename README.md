@@ -6,10 +6,8 @@ The pipeline builds an exact main-conference paper roster from DBLP, enriches th
 
 ## Current scope
 
-- IPDPS, SC, ICS, PPoPP, HPDC, ISC, CLUSTER, ICPP, Euro-Par, and HiPC
-  main conferences, 2016-2025
-- CCGrid main conference, 2016-2024 (DBLP does not yet list a 2025 proceedings
-  roster as of 2026-08-11)
+- IPDPS, SC, ICS, PPoPP, HPDC, ISC, CLUSTER, CCGrid, ICPP, Euro-Par, HiPC,
+  ASPLOS, CGO, and EuroSys main conferences, 2016-2025
 - Exact main-conference roster from DBLP TOC pages
 - Parallel collection with resumable local caches
 - DOI-based OpenAlex enrichment
@@ -47,21 +45,31 @@ SC 2018 is a documented publisher-link exception: DBLP exposes legacy ACM links
 rather than DOI links, so the collector recovers the IEEE DOI from the proceeding's
 article pagination before OpenAlex enrichment.
 
+CGO 2017 is a similar exception: DBLP exposes legacy ACM `citation.cfm` links for
+all 26 papers instead of DOI links, but the papers were actually published by IEEE
+with a DOI run that is contiguous in DBLP's listing order
+(`10.1109/cgo.2017.7863724` through `...7863749`). This was verified against
+Crossref by title for every paper in the year, including the one entry Crossref
+itself mismatched to an unrelated Zenodo artifact DOI. The collector recovers each
+DOI from the paper's position in the roster.
+
 ICS uses the ACM International Conference on Supercomputing main-proceedings TOCs
 under DBLP's `conf/ics` series. It is distinct from ISC High Performance, which DBLP
 indexes under `conf/supercomputer`.
 
 Euro-Par 2024 and 2025 each have three DBLP main-proceedings volumes. The collector
-requires all three, combines them, and deduplicates by DBLP publication key. CCGrid
-2025 is not substituted from another source: until DBLP publishes its roster, use
-`--to 2024` for CCGrid.
+requires all three, combines them, and deduplicates by DBLP publication key.
+
+ASPLOS moved to a quarterly PACMPL-issue model: 2023 and 2024 each have four DBLP
+main-proceedings volumes, and 2025 has three. The collector requires every configured
+volume for the year, combines them, and deduplicates by DBLP publication key, the
+same way it handles Euro-Par.
 
 ### 1. Collect the DBLP roster
 
 ```bash
 hpc-bib collect ipdps --from 2016 --to 2025 --workers 4
 # Replace ipdps with another venue key.
-# CCGrid currently uses: hpc-bib collect ccgrid --from 2016 --to 2024 --workers 4
 ```
 
 Use `--refresh` to rebuild cached yearly rosters.
