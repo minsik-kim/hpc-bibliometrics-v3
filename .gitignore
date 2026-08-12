@@ -1,0 +1,12 @@
+.venv/
+.env.openalex
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.DS_Store
+cache/
+results/
+*.egg-info/
+dist/
+build/
